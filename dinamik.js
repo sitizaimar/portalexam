@@ -63,7 +63,7 @@
   function load(sheet, need) {
     if (cache[sheet]) return cache[sheet];
     var url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(cfg.SHEET_ID) +
-      '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(sheet);
+      '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(sheet);
     var ctl = window.AbortController ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
     cache[sheet] = fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) {
@@ -174,9 +174,9 @@
   }
   var tarikhEls = document.querySelectorAll('[data-tarikh]');
   if (tarikhEls.length) {
-    load('Tetapan', ['kunci', 'nilai']).then(function (rows) {
+    load('Tetapan', ['kunci']).then(function (rows) {
       var map = {};
-      rows.forEach(function (r) { if (r.kunci && r.nilai) map[r.kunci.toLowerCase()] = r.nilai; });
+      rows.forEach(function (r) { var v = r.teks || r.tarikh || r.nilai; if (r.kunci && v) map[r.kunci.toLowerCase()] = v; });
       Array.prototype.forEach.call(tarikhEls, function (el) {
         var v = map[(el.getAttribute('data-tarikh') || '').toLowerCase()];
         if (v) el.textContent = fmtNilai(v);

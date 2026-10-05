@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh]');
   if (!nodes.length) return;
 
   function report(msg, bad) {
@@ -165,6 +165,24 @@
     dokumen: { need: ['kumpulan', 'tajuk'], fn: renderDokumen, sheet: 'Dokumen' },
     faq: { need: ['soalan', 'jawapan'], fn: renderFaq, sheet: 'FAQ' }
   };
+
+  var HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+  var BLN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+  function fmtNilai(v) {
+    var d = /^\d{4}-\d{1,2}-\d{1,2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? parseDate(v) : null;
+    return d ? d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear() + ' (' + HARI[d.getDay()] + ')' : v;
+  }
+  var tarikhEls = document.querySelectorAll('[data-tarikh]');
+  if (tarikhEls.length) {
+    load('Tetapan', ['kunci', 'nilai']).then(function (rows) {
+      var map = {};
+      rows.forEach(function (r) { if (r.kunci && r.nilai) map[r.kunci.toLowerCase()] = r.nilai; });
+      Array.prototype.forEach.call(tarikhEls, function (el) {
+        var v = map[(el.getAttribute('data-tarikh') || '').toLowerCase()];
+        if (v) el.textContent = fmtNilai(v);
+      });
+    }).catch(function () { /* kekalkan tarikh tetap dalam HTML */ });
+  }
 
   Array.prototype.forEach.call(nodes, function (el) {
     var m = MAP[el.getAttribute('data-sheet')];

@@ -370,6 +370,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .doc-img figcaption { padding: 10px 14px; line-height: 1.4; }
 .doc-img figcaption b { display: block; font-size: 14px; color: var(--navy); }
 .doc-img figcaption small { color: var(--muted); font-size: 12px; }
+.sub-h { font-size: 15px; color: var(--navy); margin: 18px 0 8px; }
+.panel .notice { margin: 14px 0; }
+.plain-ol { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; }
+.tt { font-weight: 700; color: var(--navy); }
+.tbl td .tt { font-weight: 400; color: inherit; }
 .empty { color: var(--muted); font-size: 13.5px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

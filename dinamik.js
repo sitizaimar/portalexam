@@ -127,11 +127,22 @@
     }).join('');
   }
 
+  function imgSrc(u) {
+    var m = /drive\.google\.com\/file\/d\/([\w-]+)/.exec(u) || /drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([\w-]+)/.exec(u);
+    return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600' : u;
+  }
+  function imgCard(o, href) {
+    return '<figure class="doc-img"><a href="' + esc(href) + '" target="_blank" rel="noopener" title="Klik untuk buka saiz penuh">' +
+      '<img src="' + esc(imgSrc(href)) + '" alt="' + esc(o.tajuk) + '" loading="lazy"></a>' +
+      '<figcaption><b>' + esc(o.tajuk) + '</b>' + (o.keterangan ? '<small>' + esc(o.keterangan) + '</small>' : '') + '</figcaption></figure>';
+  }
+
   function renderDokumen(el, rows) {
     var g = (el.getAttribute('data-group') || '').toLowerCase();
     var list = rows.filter(visible).filter(function (o) { return o.tajuk && o.kumpulan.toLowerCase() === g; });
     el.innerHTML = list.map(function (o) {
       var jenis = (o.jenis || 'PDF').toUpperCase(), href = safeUrl(o.pautan);
+      if (/^(JPG|JPEG|PNG|GAMBAR|IMAGE)$/.test(jenis) && href) return imgCard(o, href);
       var cls = jenis === 'PDF' ? 'badge' : 'badge blue';
       var tag = href ? 'a' : 'div';
       var attr = href ? ' href="' + esc(href) + '" target="_blank" rel="noopener"' : '';

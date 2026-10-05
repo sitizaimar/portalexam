@@ -363,6 +363,13 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .person .contact-row p { font-size: 13px; overflow-wrap: anywhere; }
 .unit-contact { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
 .muted-note { color: var(--muted); font-size: 12.5px; }
+.doc-img { margin: 0 0 14px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #f4f7fc; }
+.doc-img:last-child { margin-bottom: 0; }
+.doc-img a { display: block; line-height: 0; background: #fff; }
+.doc-img img { display: block; width: 100%; height: auto; }
+.doc-img figcaption { padding: 10px 14px; line-height: 1.4; }
+.doc-img figcaption b { display: block; font-size: 14px; color: var(--navy); }
+.doc-img figcaption small { color: var(--muted); font-size: 12px; }
 .empty { color: var(--muted); font-size: 13.5px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

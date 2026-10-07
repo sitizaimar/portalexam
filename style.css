@@ -327,6 +327,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 
 .news-full .news { padding: 16px 0; }
 
+@media (min-width: 1001px) { .mini-grid.g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 @media (max-width: 1000px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; }

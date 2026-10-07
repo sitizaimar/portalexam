@@ -382,3 +382,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
   html { scroll-behavior: auto; }
   .card, .mini { transition: none; }
 }
+
+/* Sub-tab di bawah tab Pelajar */
+.subtabs { max-width: 1200px; margin: 18px auto 0; padding: 0 20px; display: flex; gap: 8px; flex-wrap: wrap; }
+.subtabs a { padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--navy); font-weight: 700; font-size: 14px; }
+.subtabs a:hover { border-color: var(--navy); }
+.subtabs a.active { background: var(--navy); border-color: var(--navy); color: #fff; }

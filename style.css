@@ -531,3 +531,4 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .sy-card > div > b { display: block; color: var(--navy); font-size: 15px; margin-bottom: 2px; }
 .sy-card p { margin: 0; font-size: 13.5px; }
 @media (max-width: 640px) { .sy-grid { grid-template-columns: minmax(0, 1fr); } }
+.doc-list.no-cap .doc-img figcaption { display: none; }

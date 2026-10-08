@@ -392,4 +392,4 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 /* Poster infografik di halaman utama */
 .poster-panel { margin: 22px 0; }
 .poster-panel[hidden] { display: none; }
-.poster-box .doc-img { max-width: 560px; margin: 0 auto; }
+.poster-box .doc-img { max-width: 900px; margin: 0 auto; }

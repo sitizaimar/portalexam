@@ -3,7 +3,38 @@
   var API = (window.PBU_CONFIG && window.PBU_CONFIG.RAYUAN_API) || "";
   var wrap = document.getElementById("rs-wrap");
   if (!wrap || !API) return;               // tiada URL = bahagian ini kekal tersembunyi
-  wrap.hidden = false;
+  var HARI_LANJUT = 14;                    // paparan kekal sekian hari selepas tarikh keputusan rayuan
+  var BM = { jan: 0, feb: 1, mac: 2, apr: 3, mei: 4, jun: 5, jul: 6, ogo: 7, ogos: 7, sep: 8, sept: 8, okt: 9, nov: 10, dis: 11 };
+  function tarikhBM(s) {
+    s = String(s || "").trim(); var m;
+    if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s))) return new Date(+m[1], +m[2] - 1, +m[3]);
+    if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s))) return new Date(+m[3], +m[2] - 1, +m[1]);
+    if ((m = /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(s)) && BM[m[2].toLowerCase()] !== undefined) return new Date(+m[3], BM[m[2].toLowerCase()], +m[1]);
+    var d = new Date(s); return isNaN(d) ? null : d;
+  }
+  function buka() { wrap.hidden = false; }
+  // Paparan mengikut tarikh dalam Sheet (Tetapan): rayuan_mula hingga rayuan_keputusan + 14 hari.
+  // Boleh dipaksa: kunci semak_rayuan, ruang Teks = Ya (sentiasa buka) / Tidak (sentiasa tutup) / kosong (automatik).
+  // Pilihan: kunci semak_rayuan_hingga, ruang Tarikh = tarikh akhir paparan.
+  if (typeof window.PBU_LOAD !== "function") { buka(); }
+  else {
+    window.PBU_LOAD("Tetapan", ["kunci"]).then(function (rows) {
+      var k = {}; rows.forEach(function (r) { k[(r.kunci || "").toLowerCase()] = r; });
+      var mod = ((k.semak_rayuan && k.semak_rayuan.teks) || "").trim().toLowerCase();
+      if (mod === "ya") return buka();
+      if (mod === "tidak") return;
+      var mula = k.rayuan_mula && tarikhBM(k.rayuan_mula.tarikh || k.rayuan_mula.teks);
+      var hingga = k.semak_rayuan_hingga && tarikhBM(k.semak_rayuan_hingga.tarikh || k.semak_rayuan_hingga.teks);
+      if (!hingga) {
+        var kep = k.rayuan_keputusan && tarikhBM(k.rayuan_keputusan.tarikh || k.rayuan_keputusan.teks);
+        if (kep) hingga = new Date(kep.getFullYear(), kep.getMonth(), kep.getDate() + HARI_LANJUT);
+      }
+      var kini = new Date();
+      if (!mula || !hingga) return buka();          // tarikh tidak lengkap: jangan sembunyikan
+      hingga = new Date(hingga.getFullYear(), hingga.getMonth(), hingga.getDate() + 1);   // termasuk hari akhir
+      if (kini >= mula && kini < hingga) buka();
+    }).catch(buka);                                 // Sheet tidak dapat dibaca: paparkan
+  }
 
   var BLN = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
   function tkh(s) {
@@ -17,6 +48,8 @@
       p: "Resit bayaran tidak disertakan. Sila hubungi Unit Peperiksaan." },
     "tiada surat rayuan": { c: "bad", t: "Dokumen tidak lengkap (tiada surat rayuan)",
       p: "Surat rayuan tidak disertakan. Sila hubungi Unit Peperiksaan." },
+    "ditolak lewat": { c: "bad", t: "Ditolak (dihantar selepas tarikh tutup)",
+      p: "Permohonan anda ditolak kerana diterima selepas tarikh tutup rayuan." },
     "selesai": { c: "done", t: "Selesai",
       p: "Sila rujuk Penasihat Akademik untuk keputusan rayuan atau semak Modul i-Exam SPMP. Jika tiada perubahan, bermakna permohonan anda tidak berjaya." }
   };

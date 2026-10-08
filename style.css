@@ -521,3 +521,13 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .sesi-badge.is-old { background: rgba(255,255,255,.2); color: #cfdcf5; border: 1px dashed rgba(255,255,255,.45); }
 .panel.sesi-lepas > *:not(.panel-head) { opacity: .75; }
 @media (max-width: 520px) { .panel-head { flex-wrap: wrap; } .sesi-badge { font-size: 11.5px; padding: 3px 10px; } }
+
+.sy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 4px; }
+.sy-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; align-items: start; background: #f4f7fc; border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: 10px; padding: 14px; }
+.sy-card:nth-child(2) { border-top-color: var(--navy); } .sy-card:nth-child(3) { border-top-color: #f5b800; } .sy-card:nth-child(4) { border-top-color: #1d4a99; }
+.sy-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: #fff; }
+.sy-card:nth-child(1) .sy-ic { background: var(--red); } .sy-card:nth-child(3) .sy-ic { background: #f5b800; color: var(--navy-dark); } .sy-card:nth-child(4) .sy-ic { background: #1d4a99; }
+.sy-ic svg { width: 24px; height: 24px; }
+.sy-card > div > b { display: block; color: var(--navy); font-size: 15px; margin-bottom: 2px; }
+.sy-card p { margin: 0; font-size: 13.5px; }
+@media (max-width: 640px) { .sy-grid { grid-template-columns: minmax(0, 1fr); } }

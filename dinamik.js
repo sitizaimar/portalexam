@@ -140,6 +140,8 @@
   function renderDokumen(el, rows) {
     var g = (el.getAttribute('data-group') || '').toLowerCase();
     var list = rows.filter(visible).filter(function (o) { return o.tajuk && o.kumpulan.toLowerCase() === g; });
+    var wrap = el.closest ? el.closest('[data-poster-wrap]') : null;
+    if (wrap) { wrap.hidden = !list.length; if (!list.length) return; }
     el.innerHTML = list.map(function (o) {
       var jenis = (o.jenis || 'PDF').toUpperCase(), href = safeUrl(o.pautan);
       if (/^(JPG|JPEG|PNG|GAMBAR|IMAGE)$/.test(jenis) && href) return imgCard(o, href);

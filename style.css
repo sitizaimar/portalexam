@@ -388,3 +388,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .subtabs a { padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--navy); font-weight: 700; font-size: 14px; }
 .subtabs a:hover { border-color: var(--navy); }
 .subtabs a.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+/* Poster infografik di halaman utama */
+.poster-panel { margin: 22px 0; }
+.poster-panel[hidden] { display: none; }
+.poster-box .doc-img { max-width: 560px; margin: 0 auto; }

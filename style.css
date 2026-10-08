@@ -549,3 +549,18 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .fee-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 8px 0 18px; }
 @media (max-width: 900px) { .jr.gd-three { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { .jr.gd-two, .fee-tiles { grid-template-columns: minmax(0, 1fr); } }
+
+/* Seragamkan saiz teks kad Graduan */
+.jr.gd-two p, .jr.gd-three p { font-size: 14px; }
+.gd-items b { font-size: 14px; }
+.gd-items small { font-size: 13px; }
+.gd-items a, .gd-items a.inline { font-size: 14px; font-weight: 700; }
+.jr.gd-two > li > div > b, .jr.gd-three > li > div > b { font-size: 15.5px; }
+.gd-items small b { display: inline; font-size: inherit; }
+.gd-items small a.inline { font-size: inherit; }
+.jr .gd-items li > div > b { font-size: 14px; }
+.gd-items a, .gd-items a.inline { overflow-wrap: anywhere; }
+#gantian .doc-steps li { font-size: 14.5px; }
+.jr.gd-three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.45fr); }
+.gd-items a, .gd-items a.inline { font-size: 13.5px; overflow-wrap: break-word; }
+@media (max-width: 900px) { .jr.gd-three { grid-template-columns: minmax(0, 1fr); } }

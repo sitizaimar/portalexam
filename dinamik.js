@@ -175,8 +175,10 @@
   var BLN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
   function fmtNilai(v) {
     var d = /^\d{4}-\d{1,2}-\d{1,2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? parseDate(v) : null;
-    return d ? d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear() + ' (' + HARI[d.getDay()] + ')' : v;
+    return d ? d.getDate() + ' ' + ringkas(BLN[d.getMonth()]) + ' ' + d.getFullYear() + ' (' + HARI[d.getDay()] + ')' : ringkas(v);
   }
+  var BLN_R = { Januari: 'Jan', Februari: 'Feb', April: 'Apr', Julai: 'Jul', Ogos: 'Ogo', September: 'Sep', Oktober: 'Okt', November: 'Nov', Disember: 'Dis' };
+  function ringkas(t) { return String(t).replace(/\b(Januari|Februari|April|Julai|Ogos|September|Oktober|November|Disember)\b/g, function (m) { return BLN_R[m]; }); }
   window.PBU_FMT = fmtNilai;
   var tarikhEls = document.querySelectorAll('[data-tarikh]');
   if (tarikhEls.length) {
@@ -185,7 +187,11 @@
       rows.forEach(function (r) { var v = r.teks || r.tarikh || r.nilai; if (r.kunci && v) map[r.kunci.toLowerCase()] = v; });
       Array.prototype.forEach.call(tarikhEls, function (el) {
         var v = map[(el.getAttribute('data-tarikh') || '').toLowerCase()];
-        if (v) el.textContent = fmtNilai(v);
+        if (v) {
+          var t = fmtNilai(v);
+          if (el.hasAttribute('data-ringkas')) t = ringkas(t);
+          el.textContent = t;
+        }
       });
     }).catch(function () { /* kekalkan tarikh tetap dalam HTML */ });
   }

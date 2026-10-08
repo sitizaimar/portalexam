@@ -8,8 +8,8 @@
   if (!root) return;
 
   var DEFAULT = [
-    ['Key-in', 'Key-in Markah PB (Semua Kursus)', '13 Oktober 2026 (Selasa)', 'Pensyarah Kursus'],
-    ['Key-in', 'Key-in Markah PA (Semua Kursus)', '19 November 2026 (Khamis)', 'Pensyarah Kursus'],
+    ['Key-in', 'Key-in Markah PB (Semua Kursus)', '13 Okt 2026 (Selasa)', 'Pensyarah Kursus'],
+    ['Key-in', 'Key-in Markah PA (Semua Kursus)', '19 Nov 2026 (Khamis)', 'Pensyarah Kursus'],
     ['Sebelum Peperiksaan', 'Menerima Senarai Nama Pelajar Tidak Layak Menduduki Peperiksaan / Dimansuhkan Markah PB (Kehadiran Kurang 80%)', 'Sebelum atau pada 5 Okt 2026 (Isnin)', 'KJ / KPro / KK'],
     ['Sebelum Peperiksaan', 'Mengeluarkan Memo Kepada Pelajar Tidak Layak / Dimansuhkan Markah PB (Kehadiran Kurang 80%)', '6 Okt 2026 (Selasa)', 'KUPep / Penasihat Akademik'],
     ['Sebelum Peperiksaan', 'Menerima Senarai Nama Pelajar Tidak Layak Menduduki Peperiksaan Akhir (PB Kurang 40%)', '14 Okt 2026 (Rabu)', 'KJ / KPro / KK'],

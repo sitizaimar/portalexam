@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal]');
   if (!nodes.length) return;
 
   function report(msg, bad) {
@@ -188,6 +188,29 @@
         if (v) el.textContent = fmtNilai(v);
       });
     }).catch(function () { /* kekalkan tarikh tetap dalam HTML */ });
+  }
+
+  var kenalEls = document.querySelectorAll('[data-kenal]');
+  if (kenalEls.length) {
+    load('Tetapan', ['kunci']).then(function (rows) {
+      var map = {};
+      rows.forEach(function (r) { var v = r.teks || r.nilai || r.tarikh; if (r.kunci && v) map[r.kunci.toLowerCase()] = String(v).trim(); });
+      function senarai(v) { return v.split(/[;,\n]+/).map(function (x) { return x.trim(); }).filter(Boolean); }
+      function safe(x) { return x.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+      Array.prototype.forEach.call(kenalEls, function (el) {
+        var k = (el.getAttribute('data-kenal') || '').toLowerCase(), v = map[k];
+        if (!v) return;
+        var items = senarai(v);
+        if (items.length > 1) {
+          var blok = el.closest && el.closest('.contact-row, footer');
+          el.innerHTML = items.map(safe).join(blok ? '<br>' : ', ');
+        } else el.textContent = v;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-kenal-href]'), function (a) {
+        var v = map[(a.getAttribute('data-kenal-href') || '').toLowerCase()];
+        if (v) a.setAttribute('href', 'mailto:' + senarai(v).join(','));
+      });
+    }).catch(function () { /* kekalkan teks tetap dalam HTML */ });
   }
 
   Array.prototype.forEach.call(nodes, function (el) {

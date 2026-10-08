@@ -393,3 +393,39 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .poster-panel { margin: 22px 0; }
 .poster-panel[hidden] { display: none; }
 .poster-box .doc-img { max-width: 900px; margin: 0 auto; }
+
+/* Statistik Graduan */
+@media (min-width: 1001px) { .mini-grid.g4 .mini.wide { grid-column: 1 / -1; } }
+.mini.wide { background: linear-gradient(100deg, #eaf0fb, #fff 70%); border-left: 4px solid var(--red); }
+.stat-hero { background: linear-gradient(135deg, #0c2150, var(--navy) 60%, #1d4a99); color: #fff; text-align: center; padding: 34px 20px; position: relative; overflow: hidden; }
+.stat-hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(229, 33, 58, .35); }
+.stat-kicker { margin: 0 0 6px; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; color: #ffd24a; font-weight: 700; position: relative; z-index: 1; }
+.stat-big { display: flex; align-items: baseline; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
+.stat-num { font-size: clamp(56px, 12vw, 104px); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat-unit { font-size: clamp(20px, 4vw, 30px); font-weight: 700; color: #cfdcf5; }
+.stat-sub { margin: 10px 0 0; color: #cfdcf5; font-size: 14.5px; position: relative; z-index: 1; }
+.stat-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+.stat-tile { background: #fff; border-radius: 10px; padding: 16px; border-top: 4px solid var(--red); box-shadow: 0 1px 4px rgba(19, 48, 107, .1); display: grid; gap: 2px; }
+.stat-tile:nth-child(2) { border-top-color: var(--navy); }
+.stat-tile:nth-child(3) { border-top-color: #f2b705; }
+.stat-tile-l { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.stat-tile-v { font-size: 32px; color: var(--navy); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.stat-tile-n { font-size: 13px; color: var(--muted); }
+.stat-chart { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 12px; }
+.stat-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+.stat-lab { font-size: 14px; color: var(--navy); font-weight: 600; }
+.stat-val { font-size: 14px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; text-align: right; }
+.stat-track { grid-column: 1 / -1; grid-row: 2; display: block; height: 12px; background: #e8eef9; border-radius: 99px; overflow: hidden; }
+.stat-bar { display: block; height: 100%; width: 0; background: var(--navy); border-radius: 99px; transition: width 1s cubic-bezier(.2, .8, .2, 1); }
+.stat-row.is-latest .stat-bar { background: var(--red); }
+.stat-row.is-latest .stat-lab, .stat-row.is-latest .stat-val { color: var(--red); }
+.stat-row.is-next .stat-track { background: transparent; border: 1.5px dashed #b9c6e2; }
+.stat-row.is-next .stat-lab, .stat-row.is-next .stat-val { color: var(--muted); font-weight: 600; }
+.stat-note { margin: 16px 0 0; }
+@media (min-width: 720px) {
+  .stat-row { grid-template-columns: 230px 1fr 90px; gap: 14px; }
+  .stat-track { grid-column: 2; grid-row: 1; }
+  .stat-val { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 640px) { .stat-tiles { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .stat-bar { transition: none; } }

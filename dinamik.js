@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat]');
   if (!nodes.length) return;
 
   function report(msg, bad) {
@@ -90,6 +90,8 @@
     return cache[sheet];
   }
 
+  window.PBU_LOAD = load;
+
   function visible(o) { return !/^(tidak|no|x|0|false|n)$/i.test(o.papar || ''); }
 
   var BULAN = ['JAN', 'FEB', 'MAC', 'APR', 'MEI', 'JUN', 'JUL', 'OGOS', 'SEPT', 'OKT', 'NOV', 'DIS'];
@@ -174,6 +176,7 @@
     var d = /^\d{4}-\d{1,2}-\d{1,2}/.test(v) || /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v) ? parseDate(v) : null;
     return d ? d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear() + ' (' + HARI[d.getDay()] + ')' : v;
   }
+  window.PBU_FMT = fmtNilai;
   var tarikhEls = document.querySelectorAll('[data-tarikh]');
   if (tarikhEls.length) {
     load('Tetapan', ['kunci']).then(function (rows) {

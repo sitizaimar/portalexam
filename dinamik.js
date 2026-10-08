@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal],[data-tp]');
   if (!nodes.length) return;
 
   function report(msg, bad) {

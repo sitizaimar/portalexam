@@ -587,3 +587,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
   .tl3 li .tl-dot { grid-row: 1 / span 2; }
 }
 #penilaian-khas .stat-tile-v { font-size: 24px; }
+
+.tp-deadlines.one { grid-template-columns: minmax(0, 1fr); margin: 4px 0 0; }
+#kurikulum .sy-card:nth-child(n) .sy-ic { color: #fff; }
+#kurikulum .sy-card:nth-child(3) .sy-ic { color: var(--navy-dark); }

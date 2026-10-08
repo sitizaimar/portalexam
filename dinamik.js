@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal],[data-tp],[data-sesi-key],[data-sesi-strip]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal],[data-tp],[data-sesi-key],[data-sesi-strip],[data-kenal-links]');
   if (!nodes.length) return;
 
   function report(msg, bad) {
@@ -232,6 +232,23 @@
         if (p) p.classList.toggle('sesi-lepas', !!old);
       });
     }).catch(function () { /* kekalkan lencana tetap dalam HTML */ });
+  }
+
+  var linkEls = document.querySelectorAll('[data-kenal-links]');
+  if (linkEls.length) {
+    load('Tetapan', ['kunci']).then(function (rows) {
+      var map = {};
+      rows.forEach(function (r) { var v = r.teks || r.nilai || r.tarikh; if (r.kunci && v) map[r.kunci.toLowerCase()] = String(v).trim(); });
+      Array.prototype.forEach.call(linkEls, function (el) {
+        var v = map[(el.getAttribute('data-kenal-links') || '').toLowerCase()];
+        var items = v ? v.split(/[;,\n]+/).map(function (x) { return x.trim(); }).filter(Boolean) : [];
+        if (!items.length) return;
+        el.innerHTML = items.map(function (x, i) {
+          var a = '<a class="inline" href="mailto:' + esc(x) + '">' + esc(x) + '</a>';
+          return (i === 0 ? '' : (i === items.length - 1 ? ' atau ' : ', ')) + a;
+        }).join('');
+      });
+    }).catch(function () { /* kekalkan pautan tetap dalam HTML */ });
   }
 
   Array.prototype.forEach.call(nodes, function (el) {

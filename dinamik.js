@@ -4,7 +4,7 @@
   var cfg = window.PBU_CONFIG || {};
   var debug = /[?&]semak=1/.test(location.search);
   var log = [];
-  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal],[data-tp]');
+  var nodes = document.querySelectorAll('[data-sheet],[data-tarikh],[data-stat],[data-kenal],[data-tp],[data-sesi-key],[data-sesi-strip]');
   if (!nodes.length) return;
 
   function report(msg, bad) {
@@ -211,6 +211,27 @@
         if (v) a.setAttribute('href', 'mailto:' + senarai(v).join(','));
       });
     }).catch(function () { /* kekalkan teks tetap dalam HTML */ });
+  }
+
+  var sesiEls = document.querySelectorAll('[data-sesi-key]');
+  var sesiNow = document.querySelector('[data-sesi-now]');
+  if (sesiEls.length || sesiNow) {
+    load('Tetapan', ['kunci']).then(function (rows) {
+      var map = {};
+      rows.forEach(function (r) { var v = r.teks || r.nilai || r.tarikh; if (r.kunci && v) map[r.kunci.toLowerCase()] = String(v).trim(); });
+      var norm = function (x) { return String(x || '').toLowerCase().replace(/\s*:\s*/g, ':').replace(/\s+/g, ' ').trim(); };
+      var now = map.sesi_semasa || (sesiNow ? sesiNow.textContent : '');
+      if (sesiNow && map.sesi_semasa) sesiNow.textContent = map.sesi_semasa;
+      Array.prototype.forEach.call(sesiEls, function (el) {
+        var v = map[(el.getAttribute('data-sesi-key') || '').toLowerCase()] || el.textContent;
+        el.textContent = v;
+        var old = now && norm(v) !== norm(now);
+        el.classList.toggle('is-old', !!old);
+        if (old) el.textContent = 'Sesi lepas: ' + v;
+        var p = el.closest && el.closest('.panel');
+        if (p) p.classList.toggle('sesi-lepas', !!old);
+      });
+    }).catch(function () { /* kekalkan lencana tetap dalam HTML */ });
   }
 
   Array.prototype.forEach.call(nodes, function (el) {

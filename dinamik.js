@@ -142,6 +142,7 @@
   function renderDokumen(el, rows) {
     var g = (el.getAttribute('data-group') || '').toLowerCase();
     var list = rows.filter(visible).filter(function (o) { return o.tajuk && o.kumpulan.toLowerCase() === g; });
+    if (!list.length && el.hasAttribute('data-keep')) return;
     var wrap = el.closest ? el.closest('[data-poster-wrap]') : null;
     if (wrap) { wrap.hidden = !list.length; if (!list.length) return; }
     el.innerHTML = list.map(function (o) {

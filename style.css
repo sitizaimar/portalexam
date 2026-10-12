@@ -701,3 +701,27 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .rs-res.bad .rs-badge{background:var(--red)}.rs-res.done .rs-badge{background:#2e8b57}
 .rs-meta{font-size:13px;color:var(--muted)}
 .rs-note{display:block;margin-top:10px;font-size:12.5px;color:var(--muted)}
+
+
+
+/* PENGAWASAN */
+.three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:8px 0 14px}
+.chk-box.gold{border-top-color:#f5b800}.chk-box.gold li::before{background:#f5b800}
+.chk-box.redb{border-top-color:var(--red)}
+.three-col .chk-box:first-child{border-top-color:var(--navy)}.three-col .chk-box:first-child li::before{background:var(--navy)}
+.three-col .chk-box.redb li::before{background:var(--red)}
+.gm{list-style:none;margin:10px 0 16px;padding:0;display:grid;gap:10px}
+.gm li{display:grid;grid-template-columns:104px minmax(0,1fr);gap:14px;align-items:stretch}
+.gm-t{background:var(--navy);color:#fff;font-weight:800;font-size:14px;border-radius:8px;display:grid;place-items:center;text-align:center;padding:8px 6px}
+.gm li.mid .gm-t{background:#f5b800;color:var(--navy-dark)}.gm li.end .gm-t{background:var(--red)}
+.gm-b{background:#f4f7fc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:2px}
+.gm-b b{color:var(--navy);font-size:15px;display:block}
+.gm-b p{margin:0;font-size:13.5px}
+.gm-w{justify-self:start;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:99px;background:#e8eef9;color:var(--navy)}
+.x-list{list-style:none;margin:8px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.x-list li{position:relative;background:#fff7f8;border:1px solid #f5c5cc;border-radius:8px;padding:9px 12px 9px 38px;font-size:13.5px}
+.x-list li::before{content:"×";position:absolute;left:10px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;line-height:20px;text-align:center;font-size:14px}
+.sy-grid.gd-s3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#tugas-ketua-pengawas .stat-tile-v,#tugas-pengawas .stat-tile-v{font-size:30px}
+@media(max-width:860px){.three-col,.sy-grid.gd-s3{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){.x-list{grid-template-columns:minmax(0,1fr)}.gm li{grid-template-columns:minmax(0,1fr);gap:6px}.gm-t{justify-self:start;padding:5px 14px}}

@@ -738,3 +738,4 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .got-col.is-latest .got-val{color:var(--red)}
 .got-yr{font-size:clamp(10.5px,2.6vw,13px);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){.got-bar{transition:none}}
+.got-holder{margin-top:18px}

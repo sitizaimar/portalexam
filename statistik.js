@@ -14,6 +14,12 @@
     ['Konvokesyen 15', '', null]
   ].map(function (r) { return { nama: r[0], tahun: r[1], bil: r[2], akan: r[2] === null }; });
 
+  // Graduate On Time (GOT): tab "GOT" dalam Sheet (lajur Tahun, Peratus, Papar) menggantikan data lalai ini
+  var GOT_DEFAULT = [['2018', 84.10], ['2019', 79.36], ['2020', 83.05], ['2021', 88.50], ['2022', 93.88],
+    ['2023', 90.95], ['2024', 88.24], ['2025', 89.23], ['2026', 77.25]]
+    .map(function (r) { return { tahun: r[0], pct: r[1] }; });
+  var gotData = GOT_DEFAULT, gotHolder = null;
+
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var fmt = function (n) { return Number(n).toLocaleString('en-US'); };
   function el(tag, cls, txt) {
@@ -48,6 +54,51 @@
       var akan = /akan/i.test(o.status || '') || isNaN(bil);
       return { nama: o.konvokesyen, tahun: o.tahun || '', bil: akan ? null : bil, akan: akan };
     }).filter(function (r) { return r.nama; });
+  }
+
+  function paintGot() {
+    if (!gotHolder) return;
+    gotHolder.textContent = '';
+    var d = gotData;
+    if (!d.length) return;
+    var panel = el('section', 'panel got-panel'); panel.id = 'got';
+    var head = el('div', 'panel-head'); head.appendChild(el('h2', null, 'Graduate On Time (GOT)'));
+    panel.appendChild(head);
+    panel.appendChild(el('p', null, 'Peratusan graduan yang menamatkan pengajian dalam tempoh yang ditetapkan, mengikut tahun.'));
+    var last = d[d.length - 1];
+    var hi = d.reduce(function (m, r) { return !m || r.pct > m.pct ? r : m; }, null);
+    var avg = d.reduce(function (s, r) { return s + r.pct; }, 0) / d.length;
+    var tiles = el('div', 'stat-tiles');
+    function tile(l, v, n) {
+      var t = el('div', 'stat-tile');
+      t.appendChild(el('span', 'stat-tile-l', l)); t.appendChild(el('b', 'stat-tile-v', v)); t.appendChild(el('span', 'stat-tile-n', n));
+      tiles.appendChild(t);
+    }
+    tile('Terkini', last.pct.toFixed(2) + '%', 'Tahun ' + last.tahun);
+    tile('Tertinggi', hi.pct.toFixed(2) + '%', 'Tahun ' + hi.tahun);
+    tile('Purata', avg.toFixed(2) + '%', d[0].tahun + ' hingga ' + last.tahun);
+    panel.appendChild(tiles);
+    var cols = el('ol', 'got-chart'); cols.setAttribute('role', 'list');
+    var bars = [];
+    d.forEach(function (r) {
+      var li = el('li', 'got-col' + (r === hi ? ' is-hi' : '') + (r === last ? ' is-latest' : ''));
+      var v = el('span', 'got-val', r.pct.toFixed(2));
+      var area = el('span', 'got-area'); area.setAttribute('aria-hidden', 'true');
+      var bar = el('span', 'got-bar'); bar.dataset.h = Math.max(Math.min(r.pct, 100), 1).toFixed(2);
+      area.appendChild(bar); bars.push(bar);
+      li.appendChild(v); li.appendChild(area); li.appendChild(el('span', 'got-yr', r.tahun));
+      cols.appendChild(li);
+    });
+    panel.appendChild(cols);
+    var note = el('p', 'muted-note stat-note', 'Peratus GOT mengikut tahun graduasi.');
+    panel.appendChild(note);
+    gotHolder.appendChild(panel);
+    onView(cols, function () {
+      bars.forEach(function (b, i) {
+        if (reduce) { b.style.height = b.dataset.h + '%'; return; }
+        setTimeout(function () { b.style.height = b.dataset.h + '%'; }, i * 60);
+      });
+    });
   }
 
   function render(data) {
@@ -109,6 +160,7 @@
     note.appendChild(document.createTextNode('.'));
     panel.appendChild(note);
     root.appendChild(panel);
+    gotHolder = el('div', 'got-holder'); root.appendChild(gotHolder); paintGot();
     onView(list, function () {
       bars.forEach(function (b, i) {
         if (reduce) { b.style.width = b.dataset.w + '%'; return; }
@@ -127,6 +179,12 @@
 
   render(DEFAULT);
   if (window.PBU_LOAD) {
+    window.PBU_LOAD('GOT', ['tahun', 'peratus']).then(function (rows) {
+      var g = rows.filter(function (o) { return !/^(tidak|no|x|0|false|n)$/i.test(o.papar || ''); }).map(function (o) {
+        return { tahun: String(o.tahun).trim(), pct: parseFloat(String(o.peratus).replace('%', '').replace(',', '.')) };
+      }).filter(function (r) { return r.tahun && isFinite(r.pct); });
+      if (g.length) { gotData = g; paintGot(); }
+    }).catch(function () { /* kekalkan data lalai */ });
     window.PBU_LOAD('Statistik', ['konvokesyen', 'bil']).then(function (rows) {
       rows = rows.filter(function (o) { return !/^(tidak|no|x|0|false|n)$/i.test(o.papar || ''); });
       var d = normalise(rows);

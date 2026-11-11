@@ -159,6 +159,33 @@ tr:last-child td{border-bottom:0}
 .progress{color:var(--fg-2);font-size:13px;margin:6px 0}
 @media (max-width:560px){.chart text{font-size:16px}.hide-sm{display:none}.kpi .v{font-size:24px}.wrap{padding-block:14px 40px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Lembaran */
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:8px 2px}
+.lm-sum{margin:0 0 6px;font-size:13px;color:var(--fg-2)} .lm-bad{color:var(--bad-fg);font-weight:600}
+.lm-leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-3);margin-bottom:10px}
+.lm-key{width:16px;height:12px;border-radius:3px;background:var(--bad-bg);border:1px solid #e4a3a3}
+.lm-wrap{overflow:auto;max-height:76vh;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table.lm{border-collapse:separate;border-spacing:0;font-size:12.5px;white-space:nowrap}
+table.lm th,table.lm td{padding:5px 8px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);text-align:center;font-variant-numeric:tabular-nums}
+table.lm thead th{background:var(--navy);color:#fff;position:sticky;z-index:3;font-weight:600;border-color:rgba(255,255,255,.18)}
+table.lm tr.r1 th{top:0;height:58px}
+table.lm tr.r2 th{top:58px;background:#1d4a99;font-size:11.5px;padding:4px 6px}
+table.lm th.kh{white-space:normal;min-width:230px;max-width:230px;line-height:1.25}
+table.lm th.kh b{display:block;font-family:var(--mono);font-size:12px}
+table.lm th.kh span{display:block;font-weight:500;font-size:11px;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.lm th.kh i{font-style:normal;font-size:10.5px;opacity:.75}
+table.lm .sl{position:sticky;background:var(--surface);z-index:2;text-align:left}
+table.lm thead th.sl{background:var(--navy);z-index:5}
+table.lm .c0{left:0;min-width:40px;max-width:40px;text-align:center}
+table.lm .c1{left:40px;min-width:118px;font-family:var(--mono);font-size:12px}
+table.lm .c2{left:158px;min-width:230px;max-width:230px;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 0 0 var(--line)}
+table.lm .mono{font-family:var(--mono)}
+table.lm tbody tr:hover td:not(.fail){background:#f4f8fe}
+table.lm tr.has-fail td.c2{color:var(--bad-fg);font-weight:700}
+table.lm td.fail{background:var(--bad-bg);color:var(--bad-fg);font-weight:700;border-color:#efc4c4}
+table.lm td.blank{background:#f7f9fc}
+table.lm td.kp{font-weight:700}
 </style>
 </head>
 <body>
@@ -209,7 +236,7 @@ const cellVal=v=>{if(isNum(v))return v;const c=clean(v);return(c===''||c==='-')?
 /* ============ Keadaan ============ */
 const S={all:[],prog:'',classes:[],errors:[],sample:false,tab:'ringkasan',sort:{akj:{key:'pnm',dir:-1}},showAll:{},
   li:{thr:{DIT:90,DDT:83},full:{DIT:95,DDT:92},status:'layak',kelas:'',q:''},
-  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',q:''},audit:{sev:'',open:{}}},
+  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
   A:null};
 
 /* ============ Baca fail Excel ============ */
@@ -324,7 +351,7 @@ function analyze(){
   const multi=new Set(cl.map(c=>c.session.label)).size>1;
   cl.forEach(c=>{c.label=multi?c.program+' · '+c.session.short:c.program;c.students.forEach(s=>{s.kelas=c.label;s.sesi=c.session.label;s.ord=c.session.ord;s.sem=c.session.sem})});
   const labels=new Set(cl.map(c=>c.label));
-  for(const k of [S.f.gagal,S.f.pelajar,S.li])if(k.kelas&&!labels.has(k.kelas))k.kelas='';
+  for(const k of [S.f.gagal,S.f.pelajar,S.f.lem,S.li])if(k.kelas&&!labels.has(k.kelas))k.kelas='';
   if(S.f.status.kelas&&!labels.has(S.f.status.kelas))S.f.status.kelas='';
   if(S.f.akj.kelas&&!labels.has(S.f.akj.kelas))S.f.akj.kelas='';
   cl.forEach(c=>c.courses.forEach(k=>{if(!courses.has(k.code))courses.set(k.code,{code:k.code,name:k.name,credit:k.credit,n:0,fail:0,jmSum:0,jmN:0,paSum:0,paN:0,hasPA:false})}));
@@ -979,7 +1006,49 @@ function makeSample(){
 }
 
 /* ============ Kerangka & acara ============ */
-const TABS=[['ringkasan','Ringkasan'],['gagal','Pelajar gagal'],['status','Status'],['akj','Anugerah KJ'],['kursus','Kursus'],['semakan','Semakan data'],['li','Kelayakan LI'],['pelajar','Semua pelajar'],['banding','Perbandingan sesi']];
+/* ============ Lembaran: paparan penuh satu kelas, kursus gagal diserlahkan ============ */
+/* "Gagal" di sini sama dengan tab Pelajar gagal: sel kursus yang ada tanda ST (r.st) */
+function lemClass(){
+  const f=S.f.lem;
+  return S.classes.find(c=>c.label===f.kelas)||S.classes[0];
+}
+function renderLembaran(){
+  const f=S.f.lem,c=lemClass();
+  return '<div class="tools">'+
+   '<div class="field"><label for="lm-kelas">Kelas</label><select id="lm-kelas">'+S.classes.map(k=>opt(k.label,k.label,c.label)).join('')+'</select></div>'+
+   '<div class="field"><label for="lm-q">Cari</label><input id="lm-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
+   '<label class="chk"><input type="checkbox" id="lm-gagal"'+(f.gagal?' checked':'')+'> Pelajar gagal sahaja</label></div>'+
+   '<div id="lm-body"></div>';
+}
+function fillLembaran(){
+  const f=S.f.lem,c=lemClass(),q=f.q.toLowerCase();
+  const all=S.A.studs.filter(s=>s.kelas===c.label);
+  const rows=all.filter(s=>(!f.gagal||s.d.fails.length)&&(!q||s.nama.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)));
+  const nfail=all.reduce((a,s)=>a+s.d.fails.length,0),nstud=all.filter(s=>s.d.fails.length).length;
+  const v=x=>x==null?'':isNum(x)?String(x):esc(x);
+  let h='<p class="lm-sum"><b>'+esc(c.label)+'</b> · '+all.length+' pelajar · <span class="lm-bad">'+nstud+' pelajar ada kursus gagal ('+nfail+' keputusan gagal)</span>'+
+    (rows.length!==all.length?' · dipaparkan '+rows.length:'')+'</p>'+
+    '<div class="lm-leg"><span class="lm-key"></span> Kursus gagal (ikut tanda ST, sama seperti tab Pelajar gagal)</div>';
+  h+='<div class="lm-wrap"><table class="lm"><thead><tr class="r1"><th class="sl c0" rowspan="2">Bil.</th><th class="sl c1" rowspan="2">No. Pend</th><th class="sl c2" rowspan="2">Nama</th>';
+  c.courses.forEach(k=>{h+='<th colspan="5" class="kh" title="'+esc(k.code+' · '+k.name+' · '+k.credit+' kredit')+'"><b>'+esc(k.code)+'</b><span>'+esc(k.name)+'</span><i>'+k.credit+' kredit</i></th>'});
+  ['JJKS','JJKL','PNM','HPNM','KPTN'].forEach(k=>{h+='<th rowspan="2" class="sm">'+k+'</th>'});
+  h+='</tr><tr class="r2">';
+  c.courses.forEach(()=>{h+='<th>PB</th><th>PA</th><th>JM</th><th>NM</th><th>ST</th>'});
+  h+='</tr></thead><tbody>';
+  rows.forEach(s=>{
+    const bad=s.d.fails.length>0;
+    h+='<tr'+(bad?' class="has-fail"':'')+'><td class="sl c0">'+s.bil+'</td><td class="sl c1 mono">'+esc(s.id)+'</td><td class="sl c2">'+esc(s.nama)+'</td>';
+    c.courses.forEach(k=>{
+      const r=s.res[k.code];
+      if(!r){h+='<td colspan="5" class="blank"></td>';return}
+      const fl=s.d.fails.find(x=>x.kod===k.code),cls=fl?' class="fail"':'',tt=fl?' title="'+esc(k.code+' · '+fl.reason+(fl.kali?' · '+fl.kali:''))+'"':'';
+      h+='<td'+cls+tt+'>'+v(r.pb)+'</td><td'+cls+tt+'>'+v(r.pa)+'</td><td'+cls+tt+'>'+v(r.jm)+'</td><td'+cls+tt+'>'+(isNum(r.nm)?f2(r.nm):v(r.nm))+'</td><td'+cls+tt+'>'+esc(r.st||'')+'</td>'});
+    h+='<td>'+v(s.JJKS)+'</td><td>'+v(s.JJKL)+'</td><td>'+(isNum(s.PNM)?f2(s.PNM):'')+'</td><td>'+(isNum(s.HPNM)?f2(s.HPNM):'')+'</td><td class="kp">'+esc(s.KPTN||'')+'</td></tr>'});
+  if(!rows.length)h+='<tr><td colspan="'+(8+c.courses.length*5)+'" class="blank" style="padding:18px;text-align:center">Tiada pelajar sepadan.</td></tr>';
+  h+='</tbody></table></div>';
+  $('#lm-body').innerHTML=h;
+}
+const TABS=[['ringkasan','Ringkasan'],['gagal','Pelajar gagal'],['lembaran','Lembaran'],['status','Status'],['akj','Anugerah KJ'],['kursus','Kursus'],['semakan','Semakan data'],['li','Kelayakan LI'],['pelajar','Semua pelajar'],['banding','Perbandingan sesi']];
 function boot(){
   if(S.prog&&!S.all.some(c=>progOf(c.program)===S.prog))S.prog='';
   S.classes=S.prog?S.all.filter(c=>progOf(c.program)===S.prog):S.all.slice();
@@ -1015,8 +1084,8 @@ function render(){
 function renderPane(){
   const p=$('#pane');if(!p)return;
   const t=S.tab;
-  p.innerHTML=t==='ringkasan'?renderRingkasan():t==='gagal'?renderGagal():t==='kursus'?renderKursus():t==='semakan'?renderSemakan():t==='li'?renderLI():t==='status'?renderStatus():t==='banding'?renderBanding():t==='akj'?renderAkj():renderPelajar();
-  if(t==='ringkasan')fillKelas();if(t==='gagal')fillGagal();if(t==='kursus')fillKursus();if(t==='pelajar')fillPelajar();if(t==='li')fillLI();if(t==='status')fillStatus();if(t==='banding')fillBanding();if(t==='akj')fillAkj();
+  p.innerHTML=t==='ringkasan'?renderRingkasan():t==='gagal'?renderGagal():t==='lembaran'?renderLembaran():t==='kursus'?renderKursus():t==='semakan'?renderSemakan():t==='li'?renderLI():t==='status'?renderStatus():t==='banding'?renderBanding():t==='akj'?renderAkj():renderPelajar();
+  if(t==='ringkasan')fillKelas();if(t==='gagal')fillGagal();if(t==='lembaran')fillLembaran();if(t==='kursus')fillKursus();if(t==='pelajar')fillPelajar();if(t==='li')fillLI();if(t==='status')fillStatus();if(t==='banding')fillBanding();if(t==='akj')fillAkj();
   if(t==='semakan')document.querySelectorAll('details.rule[open]').forEach(d=>fillRule(d.dataset.rule));
   applyDL();
 }
@@ -1056,6 +1125,7 @@ document.addEventListener('toggle',e=>{
 document.addEventListener('input',e=>{
   const id=e.target.id;
   if(id==='g-q'){S.f.gagal.q=e.target.value;fillGagal()}
+  if(id==='lm-q'){S.f.lem.q=e.target.value;fillLembaran()}
   if(id==='p-q'){S.f.pelajar.q=e.target.value;fillPelajar()}
   if(id==='li-q'){S.li.q=e.target.value;fillLI()}
   if(id==='ak-q'){S.f.akj.q=e.target.value;fillAkj()}
@@ -1067,6 +1137,8 @@ document.addEventListener('change',e=>{
   const id=e.target.id,v=e.target.value;
   if(id==='fileInput'){const fl=[...e.target.files];e.target.value='';if(fl.length)readFiles(fl);return}
   if(id==='g-kelas'){S.f.gagal.kelas=v;fillGagal()}
+  if(id==='lm-kelas'){S.f.lem.kelas=v;fillLembaran()}
+  if(id==='lm-gagal'){S.f.lem.gagal=e.target.checked;fillLembaran()}
   if(id==='g-kod'){S.f.gagal.kod=v;fillGagal()}
   if(id==='g-sebab'){S.f.gagal.sebab=v;fillGagal()}
   if(e.target.dataset&&e.target.dataset.full){S.li.full[e.target.dataset.full]=e.target.value;renderPane();return}

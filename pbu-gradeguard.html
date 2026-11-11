@@ -165,21 +165,31 @@ tr:last-child td{border-bottom:0}
 .lm-sum{margin:0 0 6px;font-size:13px;color:var(--fg-2)} .lm-bad{color:var(--bad-fg);font-weight:600}
 .lm-leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-3);margin-bottom:10px}
 .lm-key{width:16px;height:12px;border-radius:3px;background:var(--bad-bg);border:1px solid #e4a3a3}
-.lm-wrap{overflow:auto;max-height:76vh;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
-table.lm{border-collapse:separate;border-spacing:0;font-size:12.5px;white-space:nowrap}
-table.lm th,table.lm td{padding:5px 8px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);text-align:center;font-variant-numeric:tabular-nums}
+/* paparan dilebarkan melebihi lajur tengah supaya muat 5 kursus */
+.lm-wrap{overflow:auto;max-height:76vh;border:1px solid var(--line);border-radius:8px;background:var(--surface);
+  width:calc(100vw - 48px);margin-left:calc(50% - 50vw + 24px)}
+table.lm{--sc:46px;border-collapse:separate;border-spacing:0;font-size:12.5px;white-space:nowrap}
+table.lm th,table.lm td{padding:5px 4px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);text-align:center;font-variant-numeric:tabular-nums}
 table.lm thead th{background:var(--navy);color:#fff;position:sticky;z-index:3;font-weight:600;border-color:rgba(255,255,255,.18)}
 table.lm tr.r1 th{top:0;height:58px}
-table.lm tr.r2 th{top:58px;background:#1d4a99;font-size:11.5px;padding:4px 6px}
-table.lm th.kh{white-space:normal;min-width:230px;max-width:230px;line-height:1.25}
+table.lm tr.r2 th{top:58px;background:#1d4a99;font-size:11.5px;padding:4px 2px}
+table.lm tr.r2 th,table.lm td:not(.sl):not(.fr):not(.blank){min-width:var(--sc);width:var(--sc);max-width:var(--sc)}
+table.lm th.kh{white-space:normal;line-height:1.25;padding:5px 6px}
 table.lm th.kh b{display:block;font-family:var(--mono);font-size:12px}
-table.lm th.kh span{display:block;font-weight:500;font-size:11px;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.lm th.kh span{display:block;font-weight:500;font-size:11px;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(var(--sc)*5 - 14px);margin:0 auto}
 table.lm th.kh i{font-style:normal;font-size:10.5px;opacity:.75}
 table.lm .sl{position:sticky;background:var(--surface);z-index:2;text-align:left}
 table.lm thead th.sl{background:var(--navy);z-index:5}
-table.lm .c0{left:0;min-width:40px;max-width:40px;text-align:center}
-table.lm .c1{left:40px;min-width:118px;font-family:var(--mono);font-size:12px}
-table.lm .c2{left:158px;min-width:230px;max-width:230px;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 0 0 var(--line)}
+table.lm .c0{left:0;min-width:36px;max-width:36px;text-align:center}
+table.lm .c1{left:36px;min-width:110px;max-width:110px;font-family:var(--mono);font-size:12px;padding-left:6px}
+table.lm .c2{left:146px;min-width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 0 0 var(--line);padding-left:6px}
+/* lajur beku sebelah kanan: JJKL, PNM, HPNM, KPTN */
+table.lm .fr{position:sticky;background:var(--surface);z-index:2}
+table.lm thead th.fr{background:var(--navy);z-index:5}
+table.lm .f1{right:180px;min-width:56px;max-width:56px;box-shadow:-2px 0 0 var(--line)}
+table.lm .f2{right:124px;min-width:56px;max-width:56px}
+table.lm .f3{right:64px;min-width:60px;max-width:60px}
+table.lm .f4{right:0;min-width:64px;max-width:64px}
 table.lm .mono{font-family:var(--mono)}
 table.lm tbody tr:hover td:not(.fail){background:#f4f8fe}
 table.lm tr.has-fail td.c2{color:var(--bad-fg);font-weight:700}
@@ -234,7 +244,7 @@ const $=s=>document.querySelector(s);
 const cellVal=v=>{if(isNum(v))return v;const c=clean(v);return(c===''||c==='-')?null:c};
 
 /* ============ Keadaan ============ */
-const S={all:[],prog:'',classes:[],errors:[],sample:false,tab:'ringkasan',sort:{akj:{key:'pnm',dir:-1}},showAll:{},
+const S={all:[],prog:'',classes:[],errors:[],sample:false,tab:'lembaran',sort:{akj:{key:'pnm',dir:-1}},showAll:{},
   li:{thr:{DIT:90,DDT:83},full:{DIT:95,DDT:92},status:'layak',kelas:'',q:''},
   f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
   A:null};
@@ -1031,7 +1041,7 @@ function fillLembaran(){
     '<div class="lm-leg"><span class="lm-key"></span> Kursus gagal (ikut tanda ST, sama seperti tab Pelajar gagal)</div>';
   h+='<div class="lm-wrap"><table class="lm"><thead><tr class="r1"><th class="sl c0" rowspan="2">Bil.</th><th class="sl c1" rowspan="2">No. Pend</th><th class="sl c2" rowspan="2">Nama</th>';
   c.courses.forEach(k=>{h+='<th colspan="5" class="kh" title="'+esc(k.code+' · '+k.name+' · '+k.credit+' kredit')+'"><b>'+esc(k.code)+'</b><span>'+esc(k.name)+'</span><i>'+k.credit+' kredit</i></th>'});
-  ['JJKS','JJKL','PNM','HPNM','KPTN'].forEach(k=>{h+='<th rowspan="2" class="sm">'+k+'</th>'});
+  [['JJKS',''],['JJKL','fr f1'],['PNM','fr f2'],['HPNM','fr f3'],['KPTN','fr f4']].forEach(k=>{h+='<th rowspan="2" class="sm '+k[1]+'">'+k[0]+'</th>'});
   h+='</tr><tr class="r2">';
   c.courses.forEach(()=>{h+='<th>PB</th><th>PA</th><th>JM</th><th>NM</th><th>ST</th>'});
   h+='</tr></thead><tbody>';
@@ -1043,12 +1053,16 @@ function fillLembaran(){
       if(!r){h+='<td colspan="5" class="blank"></td>';return}
       const fl=s.d.fails.find(x=>x.kod===k.code),cls=fl?' class="fail"':'',tt=fl?' title="'+esc(k.code+' · '+fl.reason+(fl.kali?' · '+fl.kali:''))+'"':'';
       h+='<td'+cls+tt+'>'+v(r.pb)+'</td><td'+cls+tt+'>'+v(r.pa)+'</td><td'+cls+tt+'>'+v(r.jm)+'</td><td'+cls+tt+'>'+(isNum(r.nm)?f2(r.nm):v(r.nm))+'</td><td'+cls+tt+'>'+esc(r.st||'')+'</td>'});
-    h+='<td>'+v(s.JJKS)+'</td><td>'+v(s.JJKL)+'</td><td>'+(isNum(s.PNM)?f2(s.PNM):'')+'</td><td>'+(isNum(s.HPNM)?f2(s.HPNM):'')+'</td><td class="kp">'+esc(s.KPTN||'')+'</td></tr>'});
+    h+='<td>'+v(s.JJKS)+'</td><td class="fr f1">'+v(s.JJKL)+'</td><td class="fr f2">'+(isNum(s.PNM)?f2(s.PNM):'')+'</td><td class="fr f3">'+(isNum(s.HPNM)?f2(s.HPNM):'')+'</td><td class="fr f4 kp">'+esc(s.KPTN||'')+'</td></tr>'});
   if(!rows.length)h+='<tr><td colspan="'+(8+c.courses.length*5)+'" class="blank" style="padding:18px;text-align:center">Tiada pelajar sepadan.</td></tr>';
   h+='</tbody></table></div>';
   $('#lm-body').innerHTML=h;
+  /* lebar lajur markah dikira supaya 5 kursus muat serentak dalam ruang yang ada (minimum 44px) */
+  const w=$('#lm-body .lm-wrap'),sc=Math.max(44,Math.min(80,Math.floor((w.clientWidth-326-236-4)/25)));
+  w.querySelector('table.lm').style.setProperty('--sc',sc+'px');
 }
-const TABS=[['ringkasan','Ringkasan'],['gagal','Pelajar gagal'],['lembaran','Lembaran'],['status','Status'],['akj','Anugerah KJ'],['kursus','Kursus'],['semakan','Semakan data'],['li','Kelayakan LI'],['pelajar','Semua pelajar'],['banding','Perbandingan sesi']];
+window.addEventListener('resize',()=>{clearTimeout(window._lmT);window._lmT=setTimeout(()=>{if(S.tab==='lembaran'&&$('#lm-body')&&S.A)fillLembaran()},150)});
+const TABS=[['lembaran','Lembaran'],['ringkasan','Ringkasan'],['gagal','Pelajar gagal'],['status','Status'],['akj','Anugerah KJ'],['kursus','Kursus'],['semakan','Semakan data'],['li','Kelayakan LI'],['pelajar','Semua pelajar'],['banding','Perbandingan sesi']];
 function boot(){
   if(S.prog&&!S.all.some(c=>progOf(c.program)===S.prog))S.prog='';
   S.classes=S.prog?S.all.filter(c=>progOf(c.program)===S.prog):S.all.slice();

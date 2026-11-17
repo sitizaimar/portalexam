@@ -776,13 +776,13 @@ const stPill=st=>st==='GB'?pill('bad','GB'):st==='KS'?pill('warn','KS'):pill('ok
 function pkInfo(p){
   const x=p.last,f=x.d.fails;if(f.length!==1)return null;
   const pr=progOf(x.kelas),thr=parseFloat(S.li.thr[pr]);if(!isFinite(thr)||!isNum(x.JJKK))return null;
-  const ft=f[0],total=x.JJKK+(isNum(ft.kredit)?ft.kredit:0);
+  const ft=f[0],total=x.JJKK;
   const sat=isNum(ft.pa)&&ft.pa>0&&ft.jm!=='TH'&&ft.jm!=='TL'&&ft.jm!=='LI';
   return{ft,thr,jjkk:x.JJKK,total,sat,cukup:total>=thr,ok:total>=thr&&sat};
 }
 const pkList=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.ok);
 const pkNear=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.cukup&&!r.k.sat);
-const pkTxt=k=>k.ft.kod+' ('+k.ft.kredit+' kredit): JJKK '+k.jjkk+' + '+k.ft.kredit+' = '+k.total+' (minimum '+k.thr+'), PA '+(k.sat?'diduduki ('+k.ft.pa+')':k.ft.jm==='LI'?'tiada (Latihan Industri)':'tidak diduduki');
+const pkTxt=k=>k.ft.kod+' ('+k.ft.kredit+' kredit): JJKK '+k.jjkk+' (minimum '+k.thr+'), PA '+(k.sat?'diduduki ('+k.ft.pa+')':k.ft.jm==='LI'?'tiada (Latihan Industri)':'tidak diduduki');
 function statusRows(){
   const f=S.f.status,q=f.q.toLowerCase();
   return S.A.people.filter(p=>(!f.st||(f.st==='risiko'?(p.risk.length>0&&p.st!=='GB'):f.st==='pk'?!!(pkInfo(p)&&pkInfo(p).ok):p.st===f.st))&&(!f.kelas||p.last.kelas===f.kelas)&&(!f.sesi||p.last.sesi===f.sesi)&&(!q||p.nama.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)));

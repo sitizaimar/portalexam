@@ -653,9 +653,9 @@ function fillGagalMain(){
       {key:'nama',label:'Nama',get:r=>r.nama},
       {key:'kod',label:'Kursus',get:r=>r.kod,html:r=>'<span class="mono">'+esc(r.kod)+'</span><br><span class="muted">'+esc(r.kursus)+'</span>'},
       {key:'pb',label:'PB',get:r=>r.pb,num:1},{key:'pa',label:'PA',get:r=>r.pa,num:1},{key:'jm',label:'JM',get:r=>r.jm,num:1},
-      {key:'gred',label:'Gred',get:r=>r.gred,html:r=>'<strong>'+esc(r.gred)+'</strong> <span class="muted">'+esc(r.gstatus)+'</span>'},
+      {key:'gred',label:'Gred',get:r=>r.gred,html:r=>'<strong>'+esc(r.gred)+'</strong>'},
       {key:'reason',label:'Sebab',get:r=>r.reason,html:r=>pill('bad',r.reason)+(r.kali?'<span class="muted">'+esc(r.kali)+'</span>':'')}
-    ],rows,{empty:'Tiada keputusan gagal sepadan dengan penapis.'})+'<p class="muted" style="margin:0 2px;font-size:12.5px">Gred dan status gred mengikut Jumlah Markah (Jadual 5.2.1). Kursus ditandakan gagal berdasarkan PA atau PB bawah 40, jadi gred boleh menunjukkan Lulus walaupun kursus gagal.</p>';
+    ],rows,{empty:'Tiada keputusan gagal sepadan dengan penapis.'})+'<p class="muted" style="margin:0 2px;font-size:12.5px">Gred mengikut Jumlah Markah (Jadual 5.2.1) dan hanya digunakan dalam pengiraan PNM. Kursus ditandakan gagal berdasarkan PA atau PB bawah 40.</p>';
   }else{
     const st=gagalStudents(rows);
     $('#g-main').innerHTML=table('gagalp',[
@@ -711,8 +711,8 @@ function gagalSheet(){
     return{name:'Pelajar Gagal',rows:[['Kelas','No. Pend','Nama','Bil. gagal','Kursus gagal','PNM','KPTN']].concat(
       gagalStudents(rows).map(r=>[r.kelas,r.id,r.nama,r.items.length,r.items.map(i=>i.kod+' '+i.kursus).join('; '),r.pnm,r.kptn]))};
   }
-  return{name:'Kursus Gagal',rows:[['Kelas','No. Pend','Nama','Kod kursus','Kursus','Kredit','PB','PA','JM','Gred','Status gred','NM','Sebab','Tanda']].concat(
-    rows.map(r=>[r.kelas,r.id,r.nama,r.kod,r.kursus,r.kredit,r.pb,r.pa,r.jm,r.gred,r.gstatus,r.nm,r.reason,r.tanda]))};
+  return{name:'Kursus Gagal',rows:[['Kelas','No. Pend','Nama','Kod kursus','Kursus','Kredit','PB','PA','JM','Gred','NM','Sebab','Tanda']].concat(
+    rows.map(r=>[r.kelas,r.id,r.nama,r.kod,r.kursus,r.kredit,r.pb,r.pa,r.jm,r.gred,r.nm,r.reason,r.tanda]))};
 }
 
 /* ---------- kursus ---------- */

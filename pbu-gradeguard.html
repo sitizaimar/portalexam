@@ -1107,7 +1107,7 @@ function fillLembaran(){
   w.querySelector('table.lm').style.setProperty('--sc',sc+'px');
 }
 window.addEventListener('resize',()=>{clearTimeout(window._lmT);window._lmT=setTimeout(()=>{if(S.tab==='lembaran'&&$('#lm-body')&&S.A)fillLembaran()},150)});
-const TABS=[['lembaran','Lembaran'],['ringkasan','Ringkasan'],['gagal','Pelajar gagal'],['status','Status'],['akj','Anugerah KJ'],['kursus','Kursus'],['semakan','Semakan data'],['li','Kelayakan LI'],['pelajar','Semua pelajar'],['banding','Perbandingan sesi']];
+const TABS=[['lembaran','Lembaran'],['ringkasan','Ringkasan'],['pelajar','Semua pelajar'],['gagal','Pelajar gagal'],['status','Status'],['akj','Anugerah KJ'],['li','Kelayakan LI'],['kursus','Kursus'],['semakan','Semakan data'],['banding','Perbandingan sesi']];
 function boot(){
   if(S.prog&&!S.all.some(c=>progOf(c.program)===S.prog))S.prog='';
   S.classes=S.prog?S.all.filter(c=>progOf(c.program)===S.prog):S.all.slice();

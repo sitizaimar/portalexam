@@ -447,7 +447,7 @@ function analyze(){
         else if(flagged&&mm&&!isLI&&!tiru&&mm[2]!==exp)add('tanda-lebih',s,code,'Ditanda '+mm[2]+' tetapi markah menunjukkan '+exp);
         if(flagged){
           const comp=mm?mm[2]:'';
-          const reason=isLI?'Gagal Latihan Industri':tiru?'Kes tiru (tatatertib)':r.jm==='TH'?'Tidak hadir':r.jm==='TL'?'Tidak layak':comp==='PA'?'Gagal PA':comp==='PB'?'Gagal PB':comp==='PAPB'?'Gagal PA & PB':'Gagal';
+          const reason=isLI?'Gagal Latihan Industri':tiru?'KT - Kes Tiru (Tatatertib)':r.jm==='TH'?'TH - Tidak Hadir':r.jm==='TL'?'TL - Kehadiran Kurang 80%':comp==='PA'?'Gagal PA':comp==='PB'?'Gagal PB':comp==='PAPB'?'KQ - PB Kurang 40%':'Gagal';
           const f={kelas:s.kelas,id:s.id,nama:s.nama,kod:code,kursus:m.name,kredit:m.credit,pb:r.pb,pa:r.pa,jm:r.jm,nm:r.nm,
             kali:mm?'Kali '+mm[1]:'',gred:gradeInfo(r.jm)[2],gstatus:gradeInfo(r.jm)[3],comp,reason,tanda:r.st,pnm:s.PNM,kptn:s.KPTN};
           d.fails.push(f);fails.push(f);m.fail++}
@@ -634,7 +634,7 @@ function gagalStudents(rows){
 }
 function renderGagal(){
   const A=S.A,f=S.f.gagal;
-  const kods=[...new Set(A.fails.map(x=>x.kod))].sort(),reasons=[...new Set(A.fails.map(x=>x.reason))].sort();
+  const kods=[...new Set(A.fails.map(x=>x.kod))].sort(),ORD=['Gagal PA','Gagal PB','TL - Kehadiran Kurang 80%','KQ - PB Kurang 40%','KT - Kes Tiru (Tatatertib)','TH - Tidak Hadir'],rk=x=>{const i=ORD.indexOf(x);return i<0?99:i},reasons=[...new Set(A.fails.map(x=>x.reason))].sort((a,b)=>rk(a)-rk(b)||a.localeCompare(b));
   return '<div class="tools">'+
    '<div class="field"><label for="g-kelas">Kelas</label><select id="g-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    '<div class="field"><label for="g-kod">Kursus</label><select id="g-kod">'+opt('','Semua kursus',f.kod)+kods.map(k=>opt(k,k+' · '+A.courses.get(k).name,f.kod)).join('')+'</select></div>'+
@@ -677,8 +677,8 @@ function fillGagal(){
 /* ---------- kes kritikal: TH/TL dan PB/PA = 0 ---------- */
 const isThTl=r=>r.jm==='TH'||r.jm==='TL';
 const isTiruRow=r=>isTiru(r);
-function thtlRows(){return gagalRows().filter(isThTl).map(r=>({...r,kat:[r.jm==='TH'?'Tidak hadir (TH)':'Tidak layak (TL)']}))}
-function tiruRows(){return gagalRows().filter(isTiruRow).map(r=>({...r,kat:['Kes tiru (tatatertib)']}))}
+function thtlRows(){return gagalRows().filter(isThTl).map(r=>({...r,kat:[r.jm==='TH'?'TH - Tidak Hadir':'TL - Kehadiran Kurang 80%']}))}
+function tiruRows(){return gagalRows().filter(isTiruRow).map(r=>({...r,kat:['KT - Kes Tiru (Tatatertib)']}))}
 const nPel=rows=>new Set(rows.map(r=>r.kelas+'|'+r.id)).size;
 function khasCols(){return[
   {key:'kelas',label:'Kelas',get:r=>r.kelas},
@@ -738,7 +738,7 @@ function renderSemakan(){
   const wl=Object.entries(A.W).map(([k,w])=>k+' '+(w!=null?w+':'+(100-w):'tidak pasti')).join(' · ');
   let h='<details class="rules-doc"><summary>Peraturan yang digunakan</summary><ul>'+
    '<li>Kursus gagal jika PA atau PB bawah '+CFG.passComponent+' (tanda C1/C2 pada lajur ST).</li>'+
-   '<li>Kes tiru: markah ditanda KT (tindakan tatatertib) dikira gagal dan dipaparkan sebagai "Kes tiru (tatatertib)"; tidak dilaporkan sebagai ralat tanda gagal.</li>'+
+   '<li>Kes tiru: markah ditanda KT (tindakan tatatertib) dikira gagal dan dipaparkan sebagai "KT - Kes Tiru (Tatatertib)"; tidak dilaporkan sebagai ralat tanda gagal.</li>'+
    '<li>Gred dan NM daripada JM (Jadual 5.2.1): 90–100 A+ 4.00, 80–89 A 4.00, 75–79 A- 3.67, 70–74 B+ 3.33, 65–69 B 3.00, 60–64 B- 2.67, 55–59 C+ 2.33, 50–54 C 2.00, 47–49 C- 1.67, 44–46 D+ 1.33, 40–43 D 1.00, 30–39 E 0.67, 20–29 E- 0.33, 0–19 F 0.00.</li>'+
    '<li>Pemberat JM mengikut senarai PBPA yang ditetapkan ('+Object.keys(CFG.weights).length+' kursus); kursus lain dikesan daripada data: '+esc(wl||'belum ada data')+'.</li>'+
    '<li>PNM = jumlah (NM × kredit) ÷ jumlah kredit semester.</li>'+

@@ -371,7 +371,7 @@ const RULES=[
  {id:'pendua',sev:'ralat',t:'No. Pendaftaran pendua',why:'Pelajar yang sama muncul lebih daripada sekali dalam fail yang dimuat naik.'},
  {id:'jjkl',sev:'semak',t:'JJKL tidak sepadan dengan kursus bertanda gagal',why:'Andaian: Jumlah Jam Kredit Lulus = kredit kursus yang tidak bertanda gagal. Perbezaan tepat 3 atau 6 kredit tidak ditandakan kerana dianggap kredit pindah. Perbezaan lain disenaraikan untuk disemak.'},
  {id:'kptn',sev:'semak',t:'Keputusan (KPTN) tidak sepadan dengan status gagal',why:'Andaian: tanda ~ pada KPTN (contoh KB~) wujud jika dan hanya jika pelajar ada kursus bertanda gagal.'},
- {id:'akj',sev:'semak',t:'Tanda anugerah (**) tidak sepadan dengan syarat',why:'Syarat Anugerah Ketua Jabatan: (i) KB dengan PNM 3.50 ke atas, (ii) NM 2.00 ke atas bagi setiap kursus, (iii) sekurang-kurangnya 12 kredit semester (5 kredit bagi pelajar KSS). Pelajar KSS tidak dapat dikenal pasti dalam fail, jadi ** dengan kredit 5 hingga 11 diterima.'},
+ {id:'akj',sev:'semak',t:'Tanda anugerah (**) tidak sepadan dengan syarat',why:'Syarat Anugerah Ketua Jabatan: (i) KB atau KB~ dengan PNM 3.50 ke atas, (ii) NM 2.00 ke atas bagi setiap kursus, (iii) sekurang-kurangnya 12 kredit semester (5 kredit bagi pelajar KSS). Pelajar KSS tidak dapat dikenal pasti dalam fail, jadi ** dengan kredit 5 hingga 11 diterima.'},
  {id:'standing',sev:'semak',t:'Kedudukan (KB/KS) tidak sepadan dengan HPNM dan PNM',why:'Buku Garis Panduan 6.1: KB jika HPNM 2.00 ke atas, KS jika HPNM 1.60 hingga bawah 2.00, GB jika HPNM bawah 1.60 atau PNM bawah 1.00. Pengecualian pada perkara 2.3.1 tidak disemak kerana butirannya belum diketahui, jadi pelajar yang dikecualikan mungkin ditandakan di sini.'},
  {id:'footer',sev:'semak',t:'Jadual ringkasan hujung fail tidak sepadan',why:'Bilangan KB, KB~, KS dan GB dalam jadual di bawah lembaran dibandingkan dengan lajur KPTN pelajar.'}
 ];
@@ -455,7 +455,7 @@ function analyze(){
       if(isNum(s.JJKL)&&Math.abs(d.credOk-s.JJKL)>0.001&&![3,6].some(x=>Math.abs(Math.abs(d.credOk-s.JJKL)-x)<0.001))add('jjkl',s,'','Kredit tidak gagal '+d.credOk+', JJKL dalam fail '+s.JJKL+' (gagal: '+(d.fails.map(f=>f.kod).join(', ')||'tiada')+')');
       if(s.KPTN&&/^(KB|KS|LP)/.test(s.KPTN)){const til=s.KPTN.includes('~');const nf=d.fails.filter(f=>f.jm!=='LI').length;if(til!==(nf>0))add('kptn',s,'','KPTN "'+s.KPTN+'" tetapi kursus gagal = '+nf)}
       {const nms=Object.values(s.res).map(r=>r.nm).filter(isNum),minNM=nms.length?Math.min(...nms):null;
-       const ci=(s.KPTN==='KB'||s.KPTN==='LP')&&isNum(s.PNM)&&s.PNM>=CFG.akjPnm,cii=minNM!=null&&minNM>=2,ciii=isNum(s.JJKS)&&s.JJKS>=CFG.akjCredit;
+       const ci=(s.KPTN==='KB'||s.KPTN==='KB~'||s.KPTN==='LP')&&isNum(s.PNM)&&s.PNM>=CFG.akjPnm,cii=minNM!=null&&minNM>=2,ciii=isNum(s.JJKS)&&s.JJKS>=CFG.akjCredit;
        s.ak={i:ci,ii:cii,iii:ciii,minNM,kss:ci&&cii&&!ciii&&isNum(s.JJKS)&&s.JJKS>=CFG.akjCreditKSS,ok:ci&&cii&&ciii};
        const hasAkj=s.akj==='**',expect=s.ak.ok||(hasAkj&&s.ak.kss);
        if(expect!==hasAkj){const miss=[];
@@ -878,7 +878,7 @@ function renderAkj(){
    '<li>Mendapat keputusan Kedudukan Baik (KB) dengan <strong>Purata Nilai Mata (PNM) bersamaan atau melebihi 3.50</strong> pada semester yang dinilai.</li>'+
    '<li>Mencapai Nilai Mata bersamaan atau melebihi 2.00 bagi setiap kursus yang diambil pada semester yang dinilai.</li>'+
    '<li>Memenuhi 12 kredit (pelajar sepenuh masa) dan 5 kredit bagi pelajar Kursus Secara Sambilan (KSS) atau lebih pada semester yang dinilai seperti yang telah ditetapkan dalam Buku Arahan - Arahan Peperiksaan dan Kaedah Penilaian Politeknik Kementerian Pendidikan Tinggi Malaysia.</li></ol>'+
-   '<p class="sub" style="margin:10px 0 0;max-width:90ch">Semakan portal: syarat (i) menganggap KPTN mestilah KB atau LP, jadi KB~ (ada kursus gagal) tidak layak. Pelajar KSS tidak dapat dikenal pasti daripada fail, maka pelajar yang memenuhi syarat (i) dan (ii) dengan 5 hingga 11 kredit ditandakan "Semak KSS".</p></section>'+
+   '<p class="sub" style="margin:10px 0 0;max-width:90ch">Semakan portal: syarat (i) menganggap KPTN mestilah KB, KB~ atau LP (KB~ layak, selagi memenuhi syarat ii dan iii). Pelajar KSS tidak dapat dikenal pasti daripada fail, maka pelajar yang memenuhi syarat (i) dan (ii) dengan 5 hingga 11 kredit ditandakan "Semak KSS".</p></section>'+
    '<div class="kpis"><div class="kpi"><div class="k">Bertanda **</div><div class="v">'+has+'</div><div class="s">dalam lembaran keputusan</div></div>'+
    '<div class="kpi"><div class="k">Layak (dikira)</div><div class="v">'+ok+'</div><div class="s">memenuhi ketiga-tiga syarat</div></div>'+
    '<button class="kpi" data-goto="semakan"><div class="k">Tidak sepadan</div><div class="v">'+A.byRule.akj.length+'</div><div class="s">tanda ** berbeza daripada syarat</div></button></div>'+
@@ -1036,7 +1036,7 @@ function makeSample(){
         s.res[c.code]={pb,pa,jm,nm,st:failed?'C1:PA':''};
         cred+=c.credit;qp+=c.credit*nm;if(failed)nf++;else credOk+=c.credit}
       s.JJKS=cred;s.JJKL=credOk;s.JJKK=cred;s.JKTA=cred;s.PNM=Math.round(qp/cred*100)/100;s.HPNM=s.PNM;
-      s.KPTN=nf?'KB~':'KB';s.akj=(s.PNM>=3.5&&!nf)?'**':'';
+      s.KPTN=nf?'KB~':'KB';s.akj=(s.PNM>=3.5&&Math.min(...Object.values(s.res).map(r=>r.nm))>=2)?'**':'';
       students.push(s)}
     classes.push({program:prog,title:'DATA CONTOH (REKAAN)',session:{label:'Sesi CONTOH',short:'CONTOH',sem:2,ord:1},key:'Sesi CONTOH|'+prog,file:'contoh',courses:courses.map((c,i)=>({col:i,code:c.code,name:c.name,credit:c.credit})),students,footer:null});
   }

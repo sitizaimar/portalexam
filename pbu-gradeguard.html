@@ -373,7 +373,6 @@ const RULES=[
  {id:'jjks',sev:'ralat',t:'JJKS tidak sepadan dengan jumlah kredit kursus diambil',why:'Jumlah Jam Kredit Semasa mesti sama dengan jumlah kredit semua kursus yang ada keputusan.'},
  {id:'markah',sev:'ralat',t:'Markah luar julat atau bukan nombor',why:'PB, PA dan JM mesti antara 0 dan 100, atau kod khas (TH, TL, MC dan seumpamanya).'},
  {id:'pendua',sev:'ralat',t:'No. Pendaftaran pendua',why:'Pelajar yang sama muncul lebih daripada sekali dalam fail yang dimuat naik.'},
- {id:'jjkl',sev:'semak',t:'JJKL tidak sepadan dengan kursus bertanda gagal',why:'Andaian: Jumlah Jam Kredit Lulus = kredit kursus yang tidak bertanda gagal. Perbezaan tepat 3 atau 6 kredit tidak ditandakan kerana dianggap kredit pindah. Perbezaan lain disenaraikan untuk disemak.'},
  {id:'kptn',sev:'semak',t:'Keputusan (KPTN) tidak sepadan dengan status gagal',why:'Andaian: tanda ~ pada KPTN (contoh KB~) wujud jika dan hanya jika pelajar ada kursus bertanda gagal.'},
  {id:'akj',sev:'semak',t:'Tanda anugerah (**) tidak sepadan dengan syarat',why:'Syarat Anugerah Ketua Jabatan: (i) KB atau KB~ dengan PNM 3.50 ke atas, (ii) NM 2.00 ke atas bagi setiap kursus, (iii) sekurang-kurangnya 12 kredit semester (5 kredit bagi pelajar KSS). Pelajar KSS tidak dapat dikenal pasti dalam fail, jadi ** dengan kredit 5 hingga 11 diterima.'},
  {id:'standing',sev:'semak',t:'Kedudukan (KB/KS) tidak sepadan dengan HPNM dan PNM',why:'Buku Garis Panduan 6.1: KB jika HPNM 2.00 ke atas, KS jika HPNM 1.60 hingga bawah 2.00, GB jika HPNM bawah 1.60 atau PNM bawah 1.00. Pengecualian pada perkara 2.3.1 tidak disemak kerana butirannya belum diketahui, jadi pelajar yang dikecualikan mungkin ditandakan di sini.'},
@@ -458,7 +457,6 @@ function analyze(){
       /* peringkat pelajar */
       if(d.cred>0&&isNum(s.PNM)&&Math.abs(d.pnm-s.PNM)>CFG.pnmTol)add('pnm',s,'','PNM dijangka '+d.pnm.toFixed(2)+', dalam fail '+s.PNM);
       if(isNum(s.JJKS)&&Math.abs(d.cred-s.JJKS)>0.001)add('jjks',s,'','Jumlah kredit kursus '+d.cred+', JJKS dalam fail '+s.JJKS);
-      if(isNum(s.JJKL)&&Math.abs(d.credOk-s.JJKL)>0.001&&![3,6].some(x=>Math.abs(Math.abs(d.credOk-s.JJKL)-x)<0.001))add('jjkl',s,'','Kredit tidak gagal '+d.credOk+', JJKL dalam fail '+s.JJKL+' (gagal: '+(d.fails.map(f=>f.kod).join(', ')||'tiada')+')');
       if(s.KPTN&&/^(KB|KS|LP)/.test(s.KPTN)){const til=s.KPTN.includes('~');const nf=d.fails.filter(f=>f.jm!=='LI').length;if(til!==(nf>0))add('kptn',s,'','KPTN "'+s.KPTN+'" tetapi kursus gagal = '+nf)}
       {const nms=Object.values(s.res).map(r=>r.nm).filter(isNum),minNM=nms.length?Math.min(...nms):null;
        const ci=(s.KPTN==='KB'||s.KPTN==='KB~'||s.KPTN==='LP')&&isNum(s.PNM)&&s.PNM>=CFG.akjPnm,cii=minNM!=null&&minNM>=2,ciii=isNum(s.JJKS)&&s.JJKS>=CFG.akjCredit;

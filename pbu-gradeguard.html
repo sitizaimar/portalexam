@@ -258,7 +258,7 @@ function parseSession(title){
   return{label:'Sesi '+r+' '+m[3]+'/'+y2,short:r+' '+m[3]+'/'+y2.slice(-2),sem:parseInt(m[1],10),ord:y*10+(ROM[r]||0)};
 }
 function parseSheet(ws,fileName,sheetName){
-  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});
+  const rows=ws.__rows||XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});
   const hi=rows.findIndex(r=>clean(r[0])==='Bil.');
   if(hi<3)return null;
   const codeRe=/^[A-Z]{2,4}\d{4,5}$/;
@@ -300,6 +300,38 @@ function parseSheet(ws,fileName,sheetName){
   const session=parseSession(title);
   return{program,title,session,key:session.label+'|'+program,file:fileName,courses,students,footer};
 }
+/* Eksport "failkelas_*.xls" daripada sistem ialah halaman HTML (bukan fail Excel sebenar), dengan beberapa jadual
+   dan sel berbilang baris. Tukar kepada grid baris yang sama seperti bacaan lembaran Excel. */
+function looksHtml(buf){
+  const u=new Uint8Array(buf.slice(0,8));
+  if((u[0]===0xD0&&u[1]===0xCF)||(u[0]===0x50&&u[1]===0x4B))return false;
+  const head=new TextDecoder('utf-8').decode(new Uint8Array(buf.slice(0,4000))).toLowerCase();
+  return head.includes('<table')||head.includes('<html')||head.includes('<!doctype html');
+}
+function htmlToRows(buf){
+  const doc=new DOMParser().parseFromString(new TextDecoder('utf-8').decode(new Uint8Array(buf)),'text/html');
+  const rows=[];
+  doc.querySelectorAll('table').forEach(tb=>{
+    tb.querySelectorAll('tr').forEach(tr=>{
+      const cells=[...tr.children].filter(c=>/^t[dh]$/i.test(c.tagName));
+      let col=0,n=1;const put=[];
+      cells.forEach(c=>{
+        const k=c.cloneNode(true);k.querySelectorAll('br').forEach(b=>b.replaceWith('\u0001'));
+        const lines=k.textContent.replace(/\u00a0/g,' ').split('\u0001').map(x=>x.replace(/\s+/g,' ').trim());
+        while(lines.length>1&&lines[lines.length-1]==='')lines.pop();
+        put.push({col,lines});n=Math.max(n,lines.length);
+        col+=Math.max(1,parseInt(c.getAttribute('colspan')||'1',10)||1);
+      });
+      for(let i=0;i<n;i++){
+        const r=[];
+        put.forEach(p=>{const t=p.lines[i];r[p.col]=(t==null||t==='')?null:(/^-?\d+(\.\d+)?$/.test(t)?parseFloat(t):t)});
+        for(let j=0;j<r.length;j++)if(r[j]===undefined)r[j]=null;
+        rows.push(r);
+      }
+    });
+  });
+  return rows;
+}
 async function readFiles(files){
   S.errors=[];
   const list=[...files];let n=0;
@@ -308,7 +340,7 @@ async function readFiles(files){
     await new Promise(r=>setTimeout(r,0));
     try{
       const buf=await f.arrayBuffer();
-      const wb=XLSX.read(buf,{type:'array'});
+      const wb=looksHtml(buf)?{SheetNames:['HTML'],Sheets:{HTML:{__rows:htmlToRows(buf)}}}:XLSX.read(buf,{type:'array'});
       let got=0;
       for(const sn of wb.SheetNames){
         const c=parseSheet(wb.Sheets[sn],f.name,sn);

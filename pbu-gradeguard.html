@@ -226,7 +226,9 @@ table.lm td.kp{font-weight:700}
 /* ============ Peraturan (diandaikan daripada 12 fail contoh; ubah di sini jika berbeza) ============ */
 /* Pemberat PB (%) yang ditetapkan pengguna; diutamakan berbanding yang dikesan daripada data */
 const CFG={akjCredit:12,akjCreditKSS:5,margin:0.2,weights:{DFC20303:70,DFN30472:70,DFK50093:70},passComponent:40,pnmTol:0.006,akjPnm:3.5,minWeightPts:5,
-  allowedText:['TH','TL','MC','LI','CE','CTV','CTH','TT','KT','KA']};
+  allowedText:['TH','TL','MC','LI','CE','CTV','CTH','TT','KT','KA'],
+  /* Senarai No. Pend yang semua ralat semakan datanya diabaikan (kosong; kursus tangguh TT sudah dikendalikan secara automatik) */
+  exempt:[]};
 /* Sistem Gred, Jadual 5.2.1 buku garis panduan: [markah minimum, NM, gred, status] */
 const GRADES=[[90,4,'A+','Cemerlang'],[80,4,'A','Cemerlang'],[75,3.67,'A-','Cemerlang'],[70,3.33,'B+','Kepujian'],[65,3,'B','Kepujian'],[60,2.67,'B-','Kepujian'],
   [55,2.33,'C+','Lulus'],[50,2,'C','Lulus'],[47,1.67,'C-','Lulus'],[44,1.33,'D+','Lulus'],[40,1,'D','Lulus'],[30,0.67,'E','Gagal'],[20,0.33,'E-','Gagal'],[0,0,'F','Gagal']];
@@ -409,7 +411,7 @@ function analyze(){
       for(let w=30;w<=95;w+=5){let m=0;for(const p of pts)if(Math.round(p[0]*w/100+p[1]*(100-w)/100+1e-9)===p[2])m++;if(!best||m>best.m)best={w,m}}}
     W[code]=CFG.weights[code]!=null?CFG.weights[code]:(best&&best.m/pts.length>=0.9?best.w:null);
   }
-  const add=(rule,s,code,detail)=>issues.push({rule,kelas:s.kelas,id:s.id,nama:s.nama,kod:code||'',detail});
+  const add=(rule,s,code,detail)=>CFG.exempt.includes(s.id)?0:issues.push({rule,kelas:s.kelas,id:s.id,nama:s.nama,kod:code||'',detail});
   const fails=[],studs=[],seen=new Map();
   const gHist={};GRADES.forEach(g=>gHist[g[2]]=0);
   for(const c of cl){
@@ -417,6 +419,8 @@ function analyze(){
     for(const s of c.students){
       const d={fails:[],cred:0,credOk:0,qp:0};
       for(const [code,r] of Object.entries(s.res)){
+        /* Gred/markah TT (tangguh): kursus ditangguhkan, tidak dikira dalam kredit, PNM, gagal atau semakan */
+        if([r.pb,r.pa,r.jm,r.nm,r.st].some(v=>typeof v==='string'&&v.trim().toUpperCase()==='TT'))continue;
         const m=courses.get(code);m.n++;
         /* Latihan Industri (JM = LI): tiada PB/PA/NM, tidak masuk PNM/JJKS */
         const isLI=r.jm==='LI';

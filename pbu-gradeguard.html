@@ -913,7 +913,7 @@ function liRows(){
     const pr=progOf(x.kelas),thr=parseFloat(f.thr[pr]),kk=x.JJKK,fu=parseFloat(f.full[pr]);
     const has=isFinite(thr)&&isNum(kk),hasF=isFinite(fu);
     return{s:x,kelas:x.kelas,id:x.id,nama:x.nama,prog:pr,kk,thr:isFinite(thr)?thr:null,baki:has?Math.max(0,thr-kk):null,full:hasF?fu:null,
-      status:!has?'tiada':hasF&&kk>=fu?'lulus':kk===thr?'layak':kk<thr?'belum':'antara',gagal:x.d.fails.length}});
+      status:!has?'tiada':hasF&&kk>=fu?'lulus':kk<thr?'belum':'layak',gagal:x.d.fails.length}});
 }
 function liFiltered(){
   const f=S.li,q=f.q.toLowerCase();
@@ -921,24 +921,23 @@ function liFiltered(){
 }
 function renderLI(){
   const f=S.li,progs=[...new Set(S.A.studs.map(x=>progOf(x.kelas)))].sort(),all=liRows();
-  const lay=all.filter(r=>r.status==='layak').length,bel=all.filter(r=>r.status==='belum').length,lul=all.filter(r=>r.status==='lulus').length,ant=all.filter(r=>r.status==='antara').length;
+  const lay=all.filter(r=>r.status==='layak').length,bel=all.filter(r=>r.status==='belum').length,lul=all.filter(r=>r.status==='lulus').length;
   const top=Math.max(0,...all.map(r=>isNum(r.kk)?r.kk:0));
   return ''+
-   '<div class="tools">'+progs.map(pr=>'<div class="field"><label for="li-thr-'+esc(pr)+'">Layak LI: JJKK sama dengan ('+esc(pr)+')</label><input id="li-thr-'+esc(pr)+'" data-prog="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.thr[pr]==null?'':f.thr[pr])+'"></div><div class="field"><label for="li-full-'+esc(pr)+'">Lulus Penuh: JJKK ke atas ('+esc(pr)+')</label><input id="li-full-'+esc(pr)+'" data-full="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.full[pr]==null?'':f.full[pr])+'"></div>').join('')+'</div>'+
-   '<div class="kpis"><div class="kpi"><div class="k">Layak</div><div class="v">'+lay+'</div><div class="s">JJKK tepat sama dengan kredit LI</div></div>'+
+   '<div class="tools">'+progs.map(pr=>'<div class="field"><label for="li-thr-'+esc(pr)+'">Layak LI: JJKK minimum ('+esc(pr)+')</label><input id="li-thr-'+esc(pr)+'" data-prog="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.thr[pr]==null?'':f.thr[pr])+'"></div><div class="field"><label for="li-full-'+esc(pr)+'">Lulus Penuh: JJKK ke atas ('+esc(pr)+')</label><input id="li-full-'+esc(pr)+'" data-full="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.full[pr]==null?'':f.full[pr])+'"></div>').join('')+'</div>'+
+   '<div class="kpis"><div class="kpi"><div class="k">Layak</div><div class="v">'+lay+'</div><div class="s">JJKK mencapai kredit minimum LI, belum Lulus Penuh</div></div>'+
    '<div class="kpi"><div class="k">Lulus Penuh</div><div class="v">'+lul+'</div><div class="s">JJKK mencapai had Lulus Penuh</div></div>'+
-   '<div class="kpi"><div class="k">Belum layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit LI</div></div>'+
-   (ant?'<div class="kpi"><div class="k">Antara</div><div class="v">'+ant+'</div><div class="s">lebih kredit LI, bawah Lulus Penuh</div></div>':'')+
-   '<div class="kpi"><div class="k">JJKK tertinggi</div><div class="v">'+top+'</div><div class="s">antara semua pelajar dimuat naik</div></div></div>'+
+   '<div class="kpi"><div class="k">Belum layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit minimum LI</div></div>'+
+      '<div class="kpi"><div class="k">JJKK tertinggi</div><div class="v">'+top+'</div><div class="s">antara semua pelajar dimuat naik</div></div></div>'+
    '<div class="tools"><div class="field"><label for="li-kelas">Kelas</label><select id="li-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
-   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('antara','Antara',f.status)+opt('belum','Belum layak',f.status)+'</select></div>'+
+   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum layak',f.status)+'</select></div>'+
    '<div class="field"><label for="li-q">Cari</label><input id="li-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
    '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>';
 }
 function fillLI(){
   $('#li-body').innerHTML=table('li',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
-    {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Kredit LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
+    {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
     {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum layak'):pill('info','Tiada minimum')},
     {key:'g',label:'Kursus gagal',get:r=>r.gagal,num:1}
   ],liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});

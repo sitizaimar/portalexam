@@ -224,8 +224,8 @@ table.lm td.kp{font-weight:700}
 <script>
 "use strict";
 /* ============ Peraturan (diandaikan daripada 12 fail contoh; ubah di sini jika berbeza) ============ */
-/* Pemberat PB (%) yang ditetapkan pengguna; diutamakan berbanding yang dikesan daripada data */
-const CFG={akjCredit:12,akjCreditKSS:5,margin:0.2,weights:{DFC20303:70,DFN30472:70,DFK50093:70},passComponent:40,pnmTol:0.006,akjPnm:3.5,minWeightPts:5,
+/* Pemberat PB (%) mengikut senarai PBPA; diutamakan berbanding yang dikesan daripada data */
+const CFG={akjCredit:12,akjCreditKSS:5,margin:0.2,weights:{DBM10143:60,DBM20083:60,DBM20153:60,DBM30263:70,DFC10263:70,DFC10273:70,DFC10353:70,DFC20203:70,DFC20283:70,DFC20293:70,DFC20303:70,DFC20313:70,DFC30333:70,DFC40243:70,DFC40343:70,DFK20013:70,DFK30023:70,DFK30033:70,DFK30053:70,DFK40063:70,DFK40073:70,DFK50083:70,DFK50093:70,DFN30353:70,DFN30472:70,DFN30533:70,DFN40253:70,DFN40283:70,DFN40312:70,DFN40503:70,DFN40543:70,DFN40553:70,DFN50133:70,DFN50223:70,DFN50303:70,DFN50343:70,DFN50563:70,DFP30313:70,DFP40203:70,DFP40233:70,DFP40263:70,DFP40433:70,DFP40443:70,DFP40453:70,DFP50193:70,DFP50273:70,DFP50293:70,DFP50463:70,DFT20083:70,DFT30103:70,DFT40163:70,DFT50114:70,DFT50194:70,DUT60019:100,DUT60089:100,MPU21072:100,MPU22071:100,MPU22153:100,MPU22212:100,MPU23162:100,MPU23272:100,MPU24031:100,MPU24041:100,MPU24051:100,MPU24061:100,MPU24151:100,MPU24181:100},passComponent:40,pnmTol:0.006,akjPnm:3.5,minWeightPts:5,
   allowedText:['TH','TL','MC','LI','CE','CTV','CTH','TT','KT','KA'],
   /* Senarai No. Pend yang semua ralat semakan datanya diabaikan (kosong; kursus tangguh TT sudah dikendalikan secara automatik) */
   exempt:[]};
@@ -514,13 +514,15 @@ function table(id,cols,rows,opts){
   if(!data.length)return '<div class="tw"><div class="empty">'+esc(opts.empty||'Tiada rekod sepadan.')+'</div></div>';
   const lim=S.showAll[id]?Infinity:(opts.limit||300);
   const shown=data.slice(0,lim);
-  let h='<div class="tw"><table><thead><tr>';
+  const nb=!(opts.nonum||id==='kelas');
+  let h='<div class="tw"><table><thead><tr>'+(nb?'<th class="r bil">Bil.</th>':'');
   for(const c of cols){
     const on=st&&st.key===c.key;
     h+='<th class="'+(c.num?'r':'')+'" aria-sort="'+(on?(st.dir>0?'ascending':'descending'):'none')+'"><button data-sort="'+id+'" data-key="'+c.key+'">'+esc(c.label)+'<span class="ar">'+(on?(st.dir>0?'▲':'▼'):'')+'</span></button></th>'}
   h+='</tr></thead><tbody>';
+  let bi=0;
   for(const r of shown){
-    h+='<tr>';
+    h+='<tr>'+(nb?'<td class="r num muted bil">'+(++bi)+'</td>':'');
     for(const c of cols){
       const v=c.html?c.html(r):esc(c.fmt?c.fmt(c.get(r)):(c.get(r)==null?'–':c.get(r)));
       h+='<td class="'+(c.num?'r num':'')+(c.mono?' mono':'')+'">'+v+'</td>'}
@@ -669,7 +671,7 @@ function fillGagalMain(){
 }
 
 function fillGagal(){
-  $('#g-body').innerHTML=thtlHtml()+tiruHtml()+zeroHtml()+'<h3 style="margin:22px 0 4px;font-size:16px">Pelajar gagal</h3><p class="muted" style="margin:0 0 10px;font-size:13px">Senarai penuh kursus gagal, termasuk kes dalam tiga jadual di atas.</p><div id="g-main"></div>';
+  $('#g-body').innerHTML='<h3 style="margin:4px 0 4px;font-size:16px">Pelajar gagal</h3><p class="muted" style="margin:0 0 10px;font-size:13px">Senarai penuh kursus gagal, termasuk kes TH, TL dan kes tiru yang diasingkan di bawah.</p><div id="g-main"></div><div style="margin-top:26px">'+thtlHtml()+'</div>'+tiruHtml();
   fillGagalMain();
 }
 /* ---------- kes kritikal: TH/TL dan PB/PA = 0 ---------- */
@@ -677,7 +679,6 @@ const isThTl=r=>r.jm==='TH'||r.jm==='TL';
 const isTiruRow=r=>isTiru(r);
 function thtlRows(){return gagalRows().filter(isThTl).map(r=>({...r,kat:[r.jm==='TH'?'Tidak hadir (TH)':'Tidak layak (TL)']}))}
 function tiruRows(){return gagalRows().filter(isTiruRow).map(r=>({...r,kat:['Kes tiru (tatatertib)']}))}
-function zeroRows(){return gagalRows().filter(r=>!isThTl(r)&&!isTiruRow(r)&&(r.pb===0||r.pa===0)).map(r=>({...r,kat:[r.pb===0?'PB = 0':null,r.pa===0?'PA = 0':null].filter(Boolean)}))}
 const nPel=rows=>new Set(rows.map(r=>r.kelas+'|'+r.id)).size;
 function khasCols(){return[
   {key:'kelas',label:'Kelas',get:r=>r.kelas},
@@ -699,17 +700,10 @@ function tiruHtml(){
    '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus yang ditanda KT akibat tindakan tatatertib kerana meniru. PA dan PB dikira 0 dan kursus dikira gagal. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar. Mengikut penapis di atas.</p>'+
    table('tiru',khasCols(),rows,{empty:'Tiada kes tiru dalam penapis ini.'});
 }
-function zeroHtml(){
-  const rows=zeroRows();
-  return '<h3 style="margin:22px 0 4px;font-size:16px">PB atau PA bernilai 0</h3>'+
-   '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus dengan PB atau PA = 0, tidak termasuk kes TH, TL dan kes tiru di atas. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar.</p>'+
-   table('zero',khasCols(),rows,{empty:'Tiada kes PB atau PA = 0 (selain TH/TL) dalam penapis ini.'});
-}
 const khasHead=['Kelas','No. Pend','Nama','Kod kursus','Kursus','PB','PA','JM','Kes','Tanda'];
 const khasLine=r=>[r.kelas,r.id,r.nama,r.kod,r.kursus,r.pb,r.pa,r.jm,r.kat.join(', '),r.tanda];
 function thtlSheet(){return{name:'TH-TL',rows:[khasHead].concat(thtlRows().map(khasLine))}}
 function tiruSheet(){return{name:'Kes Tiru',rows:[khasHead].concat(tiruRows().map(khasLine))}}
-function zeroSheet(){return{name:'PB-PA Sifar',rows:[khasHead].concat(zeroRows().map(khasLine))}}
 
 function gagalSheet(){
   const rows=gagalRows(),f=S.f.gagal;
@@ -722,15 +716,15 @@ function gagalSheet(){
 }
 
 /* ---------- kursus ---------- */
-function renderKursus(){return '<p class="muted" style="margin:0 0 12px">Pemberat PB:PA dikesan daripada data, kecuali kursus bertanda "ditetapkan" yang dimasukkan secara manual. Kursus tanpa markah PA dipaparkan sebagai PB sahaja.</p><div id="k-body"></div>'}
+function renderKursus(){return '<p class="muted" style="margin:0 0 12px">Pemberat PB:PA mengikut senarai PBPA yang ditetapkan dalam GradeGuard. Kursus yang tiada dalam senarai dikesan daripada data. Disusun mengikut kod kursus.</p><div id="k-body"></div>'}
 function kursusRows(){
-  return[...S.A.courses.values()].map(m=>({...m,w:S.A.W[m.code],pctFail:pct(m.fail,m.n),avgJm:m.jmN?m.jmSum/m.jmN:null,avgPa:m.paN?m.paSum/m.paN:null}));
+  return[...S.A.courses.values()].map(m=>({...m,w:S.A.W[m.code],pctFail:pct(m.fail,m.n),avgJm:m.jmN?m.jmSum/m.jmN:null,avgPa:m.paN?m.paSum/m.paN:null})).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
 }
 function fillKursus(){
   $('#k-body').innerHTML=table('kursus',[
     {key:'code',label:'Kod',get:r=>r.code,mono:1},{key:'name',label:'Kursus',get:r=>r.name},
     {key:'credit',label:'Kredit',get:r=>r.credit,num:1},
-    {key:'w',label:'PB:PA',get:r=>r.w,html:r=>r.hasPA?(r.w!=null?r.w+':'+(100-r.w)+(CFG.weights[r.code]!=null?' <span class="muted">ditetapkan</span>':''):'tidak pasti'):'PB sahaja'},
+    {key:'w',label:'PB:PA',get:r=>r.w,html:r=>r.w!=null?r.w+':'+(100-r.w):r.hasPA?'tidak pasti':'PB sahaja'},
     {key:'n',label:'Diambil',get:r=>r.n,num:1},{key:'fail',label:'Gagal',get:r=>r.fail,num:1},
     {key:'pf',label:'% gagal',get:r=>r.pctFail,num:1,fmt:v=>v+'%'},
     {key:'avgJm',label:'Purata JM',get:r=>r.avgJm,num:1,fmt:v=>isNum(v)?v.toFixed(1):'–'},
@@ -746,9 +740,9 @@ function renderSemakan(){
    '<li>Kursus gagal jika PA atau PB bawah '+CFG.passComponent+' (tanda C1/C2 pada lajur ST).</li>'+
    '<li>Kes tiru: markah ditanda KT (tindakan tatatertib) dikira gagal dan dipaparkan sebagai "Kes tiru (tatatertib)"; tidak dilaporkan sebagai ralat tanda gagal.</li>'+
    '<li>Gred dan NM daripada JM (Jadual 5.2.1): 90–100 A+ 4.00, 80–89 A 4.00, 75–79 A- 3.67, 70–74 B+ 3.33, 65–69 B 3.00, 60–64 B- 2.67, 55–59 C+ 2.33, 50–54 C 2.00, 47–49 C- 1.67, 44–46 D+ 1.33, 40–43 D 1.00, 30–39 E 0.67, 20–29 E- 0.33, 0–19 F 0.00.</li>'+
-   '<li>Pemberat JM dikesan daripada data, kecuali '+esc(Object.keys(CFG.weights).join(', '))+' yang ditetapkan 70:30: '+esc(wl||'belum ada data')+'.</li>'+
+   '<li>Pemberat JM mengikut senarai PBPA yang ditetapkan ('+Object.keys(CFG.weights).length+' kursus); kursus lain dikesan daripada data: '+esc(wl||'belum ada data')+'.</li>'+
    '<li>PNM = jumlah (NM × kredit) ÷ jumlah kredit semester.</li>'+
-   '<li>JJKL: perbezaan tepat 3 atau 6 kredit dianggap kredit pindah dan tidak ditandakan.</li><li>Peraturan JJKL dan tanda ~ pada KPTN ialah andaian daripada fail contoh. Syarat tanda ** mengikut syarat Anugerah Ketua Jabatan. Semakan ini dilabel "Semak", bukan "Ralat".</li></ul></details>';
+   '<li>Tanda ~ pada KPTN ialah andaian daripada fail contoh. Syarat tanda ** mengikut syarat Anugerah Ketua Jabatan. Semakan ini dilabel "Semak", bukan "Ralat".</li></ul></details>';
   if(!A.issues.length)h+='<div class="allgood">✓ Semua semakan lulus. Tiada ralat dijumpai dalam '+A.studs.length+' pelajar.</div>';
   h+='<div class="tools"><div class="seg" role="group" aria-label="Tahap"><button data-sev="" aria-pressed="'+(S.f.audit.sev==='')+'">Semua</button><button data-sev="ralat" aria-pressed="'+(S.f.audit.sev==='ralat')+'">Ralat</button><button data-sev="semak" aria-pressed="'+(S.f.audit.sev==='semak')+'">Semak</button></div><div class="spacer"></div>'+
    '<button class="btn primary" data-export="audit" hidden-dl>Eksport laporan audit</button></div>';
@@ -993,7 +987,7 @@ function ringkasanSheets(){
   return[{name:'Ringkasan Kelas',rows:[['Kelas','Pelajar','Ada gagal','% gagal','Kursus gagal','Purata PNM','PNM tertinggi','KB','KB~','KS','GB','**']].concat(
       cs.map(r=>[r.kelas,r.n,r.withFail,r.pctFail,r.entries,r.avg==null?'':+r.avg.toFixed(2),r.max,r.kb,r.kbt,r.ks,r.gb,r.akj]))},
     {name:'Kursus',rows:[['Kod','Kursus','Kredit','Pemberat PB','Diambil','Gagal','% gagal','Purata JM','Purata PA']].concat(
-      kursusRows().map(r=>[r.code,r.name,r.credit,r.hasPA?(r.w!=null?r.w:''):100,r.n,r.fail,r.pctFail,r.avgJm==null?'':+r.avgJm.toFixed(1),r.avgPa==null?'':+r.avgPa.toFixed(1)]))}];
+      kursusRows().map(r=>[r.code,r.name,r.credit,r.w!=null?r.w:(r.hasPA?'':100),r.n,r.fail,r.pctFail,r.avgJm==null?'':+r.avgJm.toFixed(1),r.avgPa==null?'':+r.avgPa.toFixed(1)]))}];
 }
 
 /* ============ Eksport (kapasiti downloads) ============ */
@@ -1007,6 +1001,7 @@ async function saveXlsx(name,sheets){
   if(!dl){toast('Muat turun tidak tersedia.');return}
   const wb=XLSX.utils.book_new();
   sheets.forEach(s=>{
+    if(s.name!=='Ringkasan Kelas')s={...s,rows:s.rows.map((r,i)=>[i===0?'Bil.':i].concat(r))};
     const ws=XLSX.utils.aoa_to_sheet(s.rows);
     const w=s.rows[0].map((_,i)=>({wch:Math.min(48,Math.max(8,...s.rows.slice(0,60).map(r=>String(r[i]==null?'':r[i]).length)))}));
     ws['!cols']=w;XLSX.utils.book_append_sheet(wb,ws,s.name.slice(0,31))});
@@ -1016,7 +1011,7 @@ async function saveXlsx(name,sheets){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 function doExport(kind){
-  if(kind==='gagal')return saveXlsx('pelajar-gagal-'+today()+'.xlsx',[thtlSheet(),tiruSheet(),zeroSheet(),gagalSheet()]);
+  if(kind==='gagal')return saveXlsx('pelajar-gagal-'+today()+'.xlsx',[gagalSheet(),thtlSheet(),tiruSheet()]);
   if(kind==='audit')return saveXlsx('laporan-audit-'+today()+'.xlsx',[auditSheet()]);
   if(kind==='pelajar')return saveXlsx('semua-pelajar-'+today()+'.xlsx',[pelajarSheet()]);
   if(kind==='akj')return saveXlsx('anugerah-ketua-jabatan-'+today()+'.xlsx',[akjSheet()]);
@@ -1025,7 +1020,7 @@ function doExport(kind){
   if(kind==='li')return saveXlsx('kelayakan-LI-'+today()+'.xlsx',[liSheet()]);
   if(kind==='semua'){
     const f=S.f.gagal,keep=f.view;f.view='entri';
-    const all=ringkasanSheets().concat([thtlSheet(),tiruSheet(),zeroSheet(),gagalSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
+    const all=ringkasanSheets().concat([gagalSheet(),thtlSheet(),tiruSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
     return saveXlsx('PBU-GradeGuard-'+today()+'.xlsx',all)}
 }
 
@@ -1150,7 +1145,7 @@ function renderPane(){
 function refreshBody(id){
   if(id.startsWith('audit-')){const r=id.slice(6),el=$('#ar-'+r);if(el){el.dataset.done='';fillRule(r)}return}
   if(id==='kelas'||id==='tindakan')return fillKelas();
-  if(id==='gagal'||id==='gagalp'||id==='thtl'||id==='zero')return fillGagal();
+  if(id==='gagal'||id==='gagalp'||id==='thtl'||id==='tiru')return fillGagal();
   if(id==='kursus')return fillKursus();
   if(id==='pelajar')return fillPelajar();
   if(id==='li')return fillLI();

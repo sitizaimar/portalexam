@@ -241,6 +241,8 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const f2=v=>isNum(v)?v.toFixed(2):'–';
 const pct=(a,b)=>b?Math.round(a*1000/b)/10:0;
 const $=s=>document.querySelector(s);
+/* Kes tiru: markah ditanda KT (tindakan tatatertib), PA dan PB dikira 0 */
+const isTiru=r=>[r.pb,r.pa,r.jm].some(v=>typeof v==='string'&&v.trim().toUpperCase()==='KT');
 const cellVal=v=>{if(isNum(v))return v;const c=clean(v);return(c===''||c==='-')?null:c};
 
 /* ============ Keadaan ============ */
@@ -436,13 +438,13 @@ function analyze(){
             if(e!==r.jm)add('jm',s,code,'PB '+r.pb+' / PA '+r.pa+' ('+W[code]+':'+(100-W[code])+') → JM dijangka '+e+', dalam fail '+r.jm)}}
           else if(r.pa==null&&r.jm!==r.pb)add('jm',s,code,'Hanya PB ('+r.pb+') → JM dijangka '+r.pb+', dalam fail '+r.jm)}
         /* tanda gagal */
-        const exp=isLI?'':expectedComp(r),mm=r.st.match(/^C(\d+):(PAPB|PA|PB)$/),flagged=!!r.st;
-        if(exp&&!flagged)add('tiada-tanda',s,code,'PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' → patut gagal '+exp);
-        else if(flagged&&!exp&&!isLI)add('tanda-lebih',s,code,'Ditanda '+r.st+' tetapi PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' tidak bawah '+CFG.passComponent);
-        else if(flagged&&mm&&!isLI&&mm[2]!==exp)add('tanda-lebih',s,code,'Ditanda '+mm[2]+' tetapi markah menunjukkan '+exp);
+        const tiru=!isLI&&isTiru(r),exp=isLI?'':expectedComp(r),mm=r.st.match(/^C(\d+):(PAPB|PA|PB)$/),flagged=!!r.st;
+        if(exp&&!flagged&&!tiru)add('tiada-tanda',s,code,'PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' → patut gagal '+exp);
+        else if(flagged&&!exp&&!isLI&&!tiru)add('tanda-lebih',s,code,'Ditanda '+r.st+' tetapi PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' tidak bawah '+CFG.passComponent);
+        else if(flagged&&mm&&!isLI&&!tiru&&mm[2]!==exp)add('tanda-lebih',s,code,'Ditanda '+mm[2]+' tetapi markah menunjukkan '+exp);
         if(flagged){
           const comp=mm?mm[2]:'';
-          const reason=isLI?'Gagal Latihan Industri':r.jm==='TH'?'Tidak hadir':r.jm==='TL'?'Tidak layak':comp==='PA'?'Gagal PA':comp==='PB'?'Gagal PB':comp==='PAPB'?'Gagal PA & PB':'Gagal';
+          const reason=isLI?'Gagal Latihan Industri':tiru?'Kes tiru (tatatertib)':r.jm==='TH'?'Tidak hadir':r.jm==='TL'?'Tidak layak':comp==='PA'?'Gagal PA':comp==='PB'?'Gagal PB':comp==='PAPB'?'Gagal PA & PB':'Gagal';
           const f={kelas:s.kelas,id:s.id,nama:s.nama,kod:code,kursus:m.name,kredit:m.credit,pb:r.pb,pa:r.pa,jm:r.jm,nm:r.nm,
             kali:mm?'Kali '+mm[1]:'',gred:gradeInfo(r.jm)[2],gstatus:gradeInfo(r.jm)[3],comp,reason,tanda:r.st,pnm:s.PNM,kptn:s.KPTN};
           d.fails.push(f);fails.push(f);m.fail++}
@@ -665,13 +667,15 @@ function fillGagalMain(){
 }
 
 function fillGagal(){
-  $('#g-body').innerHTML=thtlHtml()+zeroHtml()+'<h3 style="margin:22px 0 4px;font-size:16px">Pelajar gagal</h3><p class="muted" style="margin:0 0 10px;font-size:13px">Senarai penuh kursus gagal, termasuk kes dalam dua jadual di atas.</p><div id="g-main"></div>';
+  $('#g-body').innerHTML=thtlHtml()+tiruHtml()+zeroHtml()+'<h3 style="margin:22px 0 4px;font-size:16px">Pelajar gagal</h3><p class="muted" style="margin:0 0 10px;font-size:13px">Senarai penuh kursus gagal, termasuk kes dalam tiga jadual di atas.</p><div id="g-main"></div>';
   fillGagalMain();
 }
 /* ---------- kes kritikal: TH/TL dan PB/PA = 0 ---------- */
 const isThTl=r=>r.jm==='TH'||r.jm==='TL';
+const isTiruRow=r=>isTiru(r);
 function thtlRows(){return gagalRows().filter(isThTl).map(r=>({...r,kat:[r.jm==='TH'?'Tidak hadir (TH)':'Tidak layak (TL)']}))}
-function zeroRows(){return gagalRows().filter(r=>!isThTl(r)&&(r.pb===0||r.pa===0)).map(r=>({...r,kat:[r.pb===0?'PB = 0':null,r.pa===0?'PA = 0':null].filter(Boolean)}))}
+function tiruRows(){return gagalRows().filter(isTiruRow).map(r=>({...r,kat:['Kes tiru (tatatertib)']}))}
+function zeroRows(){return gagalRows().filter(r=>!isThTl(r)&&!isTiruRow(r)&&(r.pb===0||r.pa===0)).map(r=>({...r,kat:[r.pb===0?'PB = 0':null,r.pa===0?'PA = 0':null].filter(Boolean)}))}
 const nPel=rows=>new Set(rows.map(r=>r.kelas+'|'+r.id)).size;
 function khasCols(){return[
   {key:'kelas',label:'Kelas',get:r=>r.kelas},
@@ -687,15 +691,22 @@ function thtlHtml(){
    '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus yang Jumlah Markahnya TH atau TL. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar. Mengikut penapis di atas.</p>'+
    table('thtl',khasCols(),rows,{empty:'Tiada kes TH atau TL dalam penapis ini.'});
 }
+function tiruHtml(){
+  const rows=tiruRows();
+  return '<h3 style="margin:22px 0 4px;font-size:16px">Kes tiru (tindakan tatatertib)</h3>'+
+   '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus yang ditanda KT akibat tindakan tatatertib kerana meniru. PA dan PB dikira 0 dan kursus dikira gagal. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar. Mengikut penapis di atas.</p>'+
+   table('tiru',khasCols(),rows,{empty:'Tiada kes tiru dalam penapis ini.'});
+}
 function zeroHtml(){
   const rows=zeroRows();
   return '<h3 style="margin:22px 0 4px;font-size:16px">PB atau PA bernilai 0</h3>'+
-   '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus dengan PB atau PA = 0, tidak termasuk kes TH dan TL di atas. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar.</p>'+
+   '<p class="muted" style="margin:0 0 10px;max-width:85ch;font-size:13px">Keputusan kursus dengan PB atau PA = 0, tidak termasuk kes TH, TL dan kes tiru di atas. '+rows.length+' keputusan daripada '+nPel(rows)+' pelajar.</p>'+
    table('zero',khasCols(),rows,{empty:'Tiada kes PB atau PA = 0 (selain TH/TL) dalam penapis ini.'});
 }
 const khasHead=['Kelas','No. Pend','Nama','Kod kursus','Kursus','PB','PA','JM','Kes','Tanda'];
 const khasLine=r=>[r.kelas,r.id,r.nama,r.kod,r.kursus,r.pb,r.pa,r.jm,r.kat.join(', '),r.tanda];
 function thtlSheet(){return{name:'TH-TL',rows:[khasHead].concat(thtlRows().map(khasLine))}}
+function tiruSheet(){return{name:'Kes Tiru',rows:[khasHead].concat(tiruRows().map(khasLine))}}
 function zeroSheet(){return{name:'PB-PA Sifar',rows:[khasHead].concat(zeroRows().map(khasLine))}}
 
 function gagalSheet(){
@@ -731,6 +742,7 @@ function renderSemakan(){
   const wl=Object.entries(A.W).map(([k,w])=>k+' '+(w!=null?w+':'+(100-w):'tidak pasti')).join(' · ');
   let h='<details class="rules-doc"><summary>Peraturan yang digunakan</summary><ul>'+
    '<li>Kursus gagal jika PA atau PB bawah '+CFG.passComponent+' (tanda C1/C2 pada lajur ST).</li>'+
+   '<li>Kes tiru: markah ditanda KT (tindakan tatatertib) dikira gagal dan dipaparkan sebagai "Kes tiru (tatatertib)"; tidak dilaporkan sebagai ralat tanda gagal.</li>'+
    '<li>Gred dan NM daripada JM (Jadual 5.2.1): 90–100 A+ 4.00, 80–89 A 4.00, 75–79 A- 3.67, 70–74 B+ 3.33, 65–69 B 3.00, 60–64 B- 2.67, 55–59 C+ 2.33, 50–54 C 2.00, 47–49 C- 1.67, 44–46 D+ 1.33, 40–43 D 1.00, 30–39 E 0.67, 20–29 E- 0.33, 0–19 F 0.00.</li>'+
    '<li>Pemberat JM dikesan daripada data, kecuali '+esc(Object.keys(CFG.weights).join(', '))+' yang ditetapkan 70:30: '+esc(wl||'belum ada data')+'.</li>'+
    '<li>PNM = jumlah (NM × kredit) ÷ jumlah kredit semester.</li>'+
@@ -1002,7 +1014,7 @@ async function saveXlsx(name,sheets){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 function doExport(kind){
-  if(kind==='gagal')return saveXlsx('pelajar-gagal-'+today()+'.xlsx',[thtlSheet(),zeroSheet(),gagalSheet()]);
+  if(kind==='gagal')return saveXlsx('pelajar-gagal-'+today()+'.xlsx',[thtlSheet(),tiruSheet(),zeroSheet(),gagalSheet()]);
   if(kind==='audit')return saveXlsx('laporan-audit-'+today()+'.xlsx',[auditSheet()]);
   if(kind==='pelajar')return saveXlsx('semua-pelajar-'+today()+'.xlsx',[pelajarSheet()]);
   if(kind==='akj')return saveXlsx('anugerah-ketua-jabatan-'+today()+'.xlsx',[akjSheet()]);
@@ -1011,7 +1023,7 @@ function doExport(kind){
   if(kind==='li')return saveXlsx('kelayakan-LI-'+today()+'.xlsx',[liSheet()]);
   if(kind==='semua'){
     const f=S.f.gagal,keep=f.view;f.view='entri';
-    const all=ringkasanSheets().concat([thtlSheet(),zeroSheet(),gagalSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
+    const all=ringkasanSheets().concat([thtlSheet(),tiruSheet(),zeroSheet(),gagalSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
     return saveXlsx('PBU-GradeGuard-'+today()+'.xlsx',all)}
 }
 

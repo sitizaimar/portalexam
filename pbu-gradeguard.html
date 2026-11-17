@@ -250,7 +250,7 @@ const cellVal=v=>{if(isNum(v))return v;const c=clean(v);return(c===''||c==='-')?
 /* ============ Keadaan ============ */
 const S={all:[],prog:'',classes:[],errors:[],sample:false,tab:'lembaran',sort:{akj:{key:'pnm',dir:-1}},showAll:{},
   li:{thr:{DIT:90,DDT:83},full:{DIT:95,DDT:92},status:'layak',kelas:'',q:''},
-  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
+  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',st:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
   A:null};
 
 /* ============ Baca fail Excel ============ */
@@ -786,14 +786,12 @@ const pkList=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.ok);
 const pkNear=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.cukup&&!r.k.sat);
 const pkTxt=k=>k.ft.kod+' ('+k.ft.kredit+' kredit): JJKK '+k.jjkk+' (minimum '+k.thr+'), PA '+(k.sat?'diduduki ('+k.ft.pa+')':k.ft.jm==='LI'?'tiada (Latihan Industri)':'tidak diduduki');
 function personOk(p,f){const q=(f.q||'').toLowerCase();return(!f.kelas||p.last.kelas===f.kelas)&&(!q||p.nama.toLowerCase().includes(q)||p.id.toLowerCase().includes(q))}
-const gbksRows=f=>S.A.people.filter(p=>(p.st==='GB'||p.st==='KS')&&personOk(p,f));
 const risikoRows=()=>S.A.people.filter(p=>p.risk.length&&p.st!=='GB');
 const pkRows=f=>S.A.people.filter(p=>{const k=pkInfo(p);return k&&k.cukup&&personOk(p,f)});
 const pBase=()=>[
   {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
   {key:'pnm',label:'PNM',get:r=>r.last.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.last.HPNM,num:1,fmt:f2},
   {key:'fail',label:'KPTN fail',get:r=>r.last.KPTN,html:r=>kptnPill(r.last.KPTN)}];
-const gbksCols=()=>pBase().concat([{key:'st',label:'Dikira',get:r=>r.st,html:r=>stPill(r.st)},{key:'why',label:'Sebab',get:r=>r.why.join('; '),html:r=>esc(r.why.join('; '))}]);
 const risikoCols=()=>pBase().concat([{key:'st',label:'Dikira',get:r=>r.st,html:r=>stPill(r.st)},{key:'risk',label:'Risiko',get:r=>r.risk.join('; '),html:r=>r.risk.map(x=>pill('warn',x)).join('')}]);
 const pkCols=()=>[
   {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
@@ -954,20 +952,20 @@ function liSheet(){
 /* ---------- semua pelajar ---------- */
 function pelajarRows(){
   const f=S.f.pelajar,q=f.q.toLowerCase();
-  return S.A.studs.filter(s=>(!f.kelas||s.kelas===f.kelas)&&(!f.kptn||s.KPTN===f.kptn)&&(!q||s.nama.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)));
+  const pst=f.st?new Map(S.A.people.map(p=>[p.id,p])):null;
+  return S.A.studs.filter(s=>(!f.kelas||s.kelas===f.kelas)&&(!f.kptn||s.KPTN===f.kptn)&&(!f.st||(pst.get(s.id)&&pst.get(s.id).last===s&&pst.get(s.id).st===f.st))&&(!q||s.nama.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)));
 }
 function renderPelajar(){
   const f=S.f.pelajar,kp=[...new Set(S.A.studs.map(s=>s.KPTN).filter(Boolean))].sort();
   return '<div class="tools">'+
    '<div class="field"><label for="p-kelas">Kelas</label><select id="p-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    '<div class="field"><label for="p-kptn">Keputusan</label><select id="p-kptn">'+opt('','Semua',f.kptn)+kp.map(k=>opt(k,k,f.kptn)).join('')+'</select></div>'+
+   '<div class="field"><label for="p-st">Kedudukan (dikira)</label><select id="p-st">'+opt('','Semua',f.st)+opt('GB','GB',f.st)+opt('KS','KS',f.st)+'</select></div>'+
    '<div class="field"><label for="p-q">Cari</label><input id="p-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
-   '<div class="spacer"></div><button class="btn primary" data-export="pelajar" hidden-dl>Eksport Excel</button></div><div id="p-gbks"></div><h3 style="margin:22px 0 10px;font-size:16px">Semua pelajar</h3><div id="p-body"></div>';
+   '<div class="spacer"></div><button class="btn primary" data-export="pelajar" hidden-dl>Eksport Excel</button></div><div id="p-body"></div>';
 }
+const personOf=r=>S.A.people.find(p=>p.id===r.id)||{st:'',why:[]};
 function fillPelajar(){
-  const gr=gbksRows(S.f.pelajar),ngb=gr.filter(p=>p.st==='GB').length,nks=gr.length-ngb;
-  $('#p-gbks').innerHTML='<h3 style="margin:4px 0 4px;font-size:16px">Kedudukan GB dan KS (dikira)</h3><p class="muted" style="margin:0 0 10px;max-width:90ch;font-size:13px">Dikira daripada HPNM, PNM, kegagalan kursus yang sama tiga kali dan KS tiga kali berturut-turut. '+ngb+' GB dan '+nks+' KS. Mengikut penapis kelas dan carian di atas.</p>'+
-    table('gbks',gbksCols(),gr,{limit:200,empty:'Tiada pelajar GB atau KS dalam penapis ini.'});
   $('#p-body').innerHTML=table('pelajar',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'k',label:'Kursus',get:r=>Object.keys(r.res).length,num:1},
@@ -975,7 +973,7 @@ function fillPelajar(){
     {key:'pnm',label:'PNM',get:r=>r.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.HPNM,num:1,fmt:f2},
     {key:'kptn',label:'KPTN',get:r=>r.KPTN,html:r=>kptnPill(r.KPTN)},
     {key:'akj',label:'**',get:r=>r.akj,html:r=>r.akj==='**'?pill('info','**'):''}
-  ],pelajarRows(),{limit:400});
+  ].concat(S.f.pelajar.st?[{key:'dk',label:'Dikira',get:r=>personOf(r).st,html:r=>stPill(personOf(r).st)},{key:'sb',label:'Sebab',get:r=>personOf(r).why.join('; '),html:r=>esc(personOf(r).why.join('; '))}]:[]),pelajarRows(),{limit:400});
 }
 function pelajarSheet(){
   return{name:'Semua Pelajar',rows:[['Kelas','No. Pend','Nama','Bil. kursus','Bil. gagal','JJKS','JJKL','PNM','HPNM','KPTN','**']].concat(
@@ -1147,7 +1145,6 @@ function refreshBody(id){
   if(id==='kursus')return fillKursus();
   if(id==='pelajar')return fillPelajar();
   if(id==='li')return fillLI();
-  if(id==='gbks')return fillPelajar();
   if(id==='risiko')return fillKelas();
   if(id==='pk')return fillLI();
   if(id==='banding')return fillBanding();
@@ -1203,6 +1200,7 @@ document.addEventListener('change',e=>{
   if(id==='li-status'){S.li.status=v;fillLI()}
   if(id==='p-kelas'){S.f.pelajar.kelas=v;fillPelajar()}
   if(id==='p-kptn'){S.f.pelajar.kptn=v;fillPelajar()}
+  if(id==='p-st'){S.f.pelajar.st=v;fillPelajar()}
 });
 ['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();const dz=$('#dz');if(dz)dz.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{const dz=$('#dz');if(dz)dz.classList.remove('over')}));

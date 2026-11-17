@@ -594,6 +594,7 @@ function renderRingkasan(){
    '<div class="kpi"><div class="k">Purata PNM</div><div class="v">'+f2(avg)+'</div><div class="s">'+A.studs.filter(s=>s.akj==='**').length+' pelajar bertanda **</div></div>'+
    '<button class="kpi" data-goto="semakan"><div class="k">Ralat data</div><div class="v">'+ralat+'</div><div class="s">'+(A.issues.length-ralat)+' perkara untuk disemak</div></button></div>';
   if(A.studs.some(x=>/^(GB|KS)/.test(x.KPTN||'')))h+='<section class="panel" style="margin-bottom:18px"><h3>Kedudukan perlu tindakan</h3><p class="sub">Pelajar Gagal dan Diberhentikan (GB) dan Kedudukan Bersyarat (KS).</p><div id="tbl-tindakan"></div></section>';
+  if(risikoRows().length)h+='<section class="panel" style="margin-bottom:18px"><h3>Hampir ambang</h3><p class="sub">Pelajar dalam lingkungan '+CFG.margin.toFixed(2)+' daripada ambang kedudukan: HPNM hampir 1.60 atau 2.00, PNM hampir 1.00, atau KS kali ke-3 yang akan menjadi GB.</p><div id="tbl-risiko"></div></section>';
   h+='<div class="grid2"><section class="panel"><h3>Taburan gred</h3><p class="sub">Bilangan keputusan kursus bagi setiap gred, semua kelas digabung. Halakan tetikus untuk markah, NM dan status.</p>'+gradeChart()+'</section>'+
      '<section class="panel"><h3>Pelajar dengan kursus gagal setiap kelas</h3><p class="sub">Peratus pelajar yang gagal sekurang-kurangnya satu kursus.</p>'+classChart(cs)+'</section></div>';
   h+='<h3 style="margin:4px 0 10px">Ringkasan mengikut kelas</h3><div id="tbl-kelas"></div>';
@@ -608,6 +609,7 @@ function fillKelas(){
     {key:'pnm',label:'PNM',get:r=>r.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.HPNM,num:1,fmt:f2},
     {key:'k',label:'Kursus gagal',get:r=>r.d.fails.length,html:r=>r.d.fails.map(i=>'<span class="pill bad" title="'+esc(i.kursus+' · '+i.reason)+'">'+esc(i.kod)+'</span>').join('')}
   ],S.A.studs.filter(x=>/^(GB|KS)/.test(x.KPTN||'')),{limit:100});
+  const rk=$('#tbl-risiko');if(rk)rk.innerHTML=table('risiko',risikoCols(),risikoRows(),{limit:100});
   $('#tbl-kelas').innerHTML=table('kelas',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},
     {key:'n',label:'Pelajar',get:r=>r.n,num:1},
@@ -783,38 +785,29 @@ function pkInfo(p){
 const pkList=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.ok);
 const pkNear=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.cukup&&!r.k.sat);
 const pkTxt=k=>k.ft.kod+' ('+k.ft.kredit+' kredit): JJKK '+k.jjkk+' (minimum '+k.thr+'), PA '+(k.sat?'diduduki ('+k.ft.pa+')':k.ft.jm==='LI'?'tiada (Latihan Industri)':'tidak diduduki');
-function statusRows(){
-  const f=S.f.status,q=f.q.toLowerCase();
-  return S.A.people.filter(p=>(!f.st||(f.st==='risiko'?(p.risk.length>0&&p.st!=='GB'):f.st==='pk'?!!(pkInfo(p)&&pkInfo(p).ok):p.st===f.st))&&(!f.kelas||p.last.kelas===f.kelas)&&(!f.sesi||p.last.sesi===f.sesi)&&(!q||p.nama.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)));
-}
-function renderStatus(){
-  const A=S.A,f=S.f.status,P=A.people;
-  const gb=P.filter(p=>p.st==='GB').length,ks=P.filter(p=>p.st==='KS').length,rs=P.filter(p=>p.risk.length&&p.st!=='GB').length,pk=pkList().length,pn=pkNear().length;
-  return '<div class="kpis"><div class="kpi"><div class="k">GB (dikira)</div><div class="v">'+gb+'</div><div class="s">memenuhi syarat Gagal dan Diberhentikan</div></div>'+
-   '<div class="kpi"><div class="k">KS</div><div class="v">'+ks+'</div><div class="s">Kedudukan Bersyarat</div></div>'+
-   '<div class="kpi"><div class="k">Penilaian Khas (PK)</div><div class="v">'+pk+'</div><div class="s">'+(pn?pn+' lagi cukup kredit tetapi PA tidak diduduki':'cukup kredit, gagal satu kursus, PA diduduki')+'</div></div>'+
-   '<div class="kpi"><div class="k">Hampir ambang</div><div class="v">'+rs+'</div><div class="s">dalam lingkungan '+CFG.margin.toFixed(2)+' daripada ambang</div></div>'+
-   '<button class="kpi" data-goto="semakan"><div class="k">Beza dengan fail</div><div class="v">'+A.byRule.standing.length+'</div><div class="s">KB/KS dalam fail tidak sepadan</div></button></div>'+
-   '<div class="tools"><div class="field"><label for="st-status">Kedudukan</label><select id="st-status">'+opt('','Semua',f.st)+opt('GB','GB',f.st)+opt('KS','KS',f.st)+opt('risiko','Hampir ambang',f.st)+opt('pk','Penilaian Khas (PK)',f.st)+'</select></div>'+
-   '<div class="field"><label for="st-kelas">Kelas</label><select id="st-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
-   (A.sessions.length>1?'<div class="field"><label for="st-sesi">Sesi terkini</label><select id="st-sesi">'+opt('','Semua sesi',f.sesi)+A.sessions.map(x=>opt(x.label,x.label,f.sesi)).join('')+'</select></div>':'')+
-   '<div class="field"><label for="st-q">Cari</label><input id="st-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
-   '<div class="spacer"></div><button class="btn primary" data-export="status">Eksport Excel</button></div><div id="st-body"></div>';
-}
-function fillStatus(){
-  $('#st-body').innerHTML=table('status',[
-    {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
-    {key:'pnm',label:'PNM',get:r=>r.last.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.last.HPNM,num:1,fmt:f2},
-    {key:'fail',label:'KPTN fail',get:r=>r.last.KPTN,html:r=>kptnPill(r.last.KPTN)},
-    {key:'st',label:'Dikira',get:r=>r.st,html:r=>{const k=pkInfo(r);return stPill(r.st)+(k&&k.ok?pill('info','PK'):k&&k.cukup?pill('warn','PK: PA tiada'):'')}},
-    {key:'pk',label:'Butiran PK',get:r=>{const k=pkInfo(r);return k&&k.cukup?pkTxt(k):''},html:r=>{const k=pkInfo(r);return k&&k.cukup?esc(pkTxt(k)):'<span class="muted">–</span>'}},
-    {key:'why',label:'Sebab',get:r=>r.why.join('; '),html:r=>esc(r.why.join('; '))},
-    {key:'risk',label:'Risiko',get:r=>r.risk.length,html:r=>r.risk.map(x=>pill('warn',x)).join('')}
-  ],statusRows(),{limit:400,empty:'Tiada pelajar sepadan dengan penapis.'});
-}
+function personOk(p,f){const q=(f.q||'').toLowerCase();return(!f.kelas||p.last.kelas===f.kelas)&&(!q||p.nama.toLowerCase().includes(q)||p.id.toLowerCase().includes(q))}
+const gbksRows=f=>S.A.people.filter(p=>(p.st==='GB'||p.st==='KS')&&personOk(p,f));
+const risikoRows=()=>S.A.people.filter(p=>p.risk.length&&p.st!=='GB');
+const pkRows=f=>S.A.people.filter(p=>{const k=pkInfo(p);return k&&k.cukup&&personOk(p,f)});
+const pBase=()=>[
+  {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
+  {key:'pnm',label:'PNM',get:r=>r.last.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.last.HPNM,num:1,fmt:f2},
+  {key:'fail',label:'KPTN fail',get:r=>r.last.KPTN,html:r=>kptnPill(r.last.KPTN)}];
+const gbksCols=()=>pBase().concat([{key:'st',label:'Dikira',get:r=>r.st,html:r=>stPill(r.st)},{key:'why',label:'Sebab',get:r=>r.why.join('; '),html:r=>esc(r.why.join('; '))}]);
+const risikoCols=()=>pBase().concat([{key:'st',label:'Dikira',get:r=>r.st,html:r=>stPill(r.st)},{key:'risk',label:'Risiko',get:r=>r.risk.join('; '),html:r=>r.risk.map(x=>pill('warn',x)).join('')}]);
+const pkCols=()=>[
+  {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
+  {key:'jk',label:'JJKK',get:r=>r.last.JJKK,num:1},
+  {key:'ft',label:'Kursus gagal',get:r=>pkInfo(r).ft.kod,html:r=>{const k=pkInfo(r);return '<span class="mono">'+esc(k.ft.kod)+'</span><br><span class="muted">'+esc(k.ft.kursus)+'</span>'}},
+  {key:'pk',label:'Status PK',get:r=>pkInfo(r).ok?'Layak':'PA tiada',html:r=>pkInfo(r).ok?pill('info','Layak PK'):pill('warn','PA tiada')},
+  {key:'det',label:'Butiran',get:r=>pkTxt(pkInfo(r)),html:r=>esc(pkTxt(pkInfo(r)))}];
 function statusSheet(){
   return{name:'Kedudukan',rows:[['Kelas','Sesi','No. Pend','Nama','PNM','HPNM','KPTN dalam fail','Kedudukan dikira','Sebab','Risiko','Penilaian Khas (PK)','Butiran PK']].concat(
-    statusRows().map(r=>{const k=pkInfo(r);return[r.last.kelas,r.last.sesi,r.id,r.nama,r.last.PNM,r.last.HPNM,r.last.KPTN,r.st,r.why.join('; '),r.risk.join('; '),k&&k.ok?'Ya':k&&k.cukup?'Tidak (PA tiada)':'',k&&k.cukup?pkTxt(k):'']}))};
+    S.A.people.map(r=>{const k=pkInfo(r);return[r.last.kelas,r.last.sesi,r.id,r.nama,r.last.PNM,r.last.HPNM,r.last.KPTN,r.st,r.why.join('; '),r.risk.join('; '),k&&k.ok?'Ya':k&&k.cukup?'Tidak (PA tiada)':'',k&&k.cukup?pkTxt(k):'']}))};
+}
+function pkSheet(){
+  return{name:'Penilaian Khas',rows:[['Kelas','No. Pend','Nama','JJKK','Kod kursus gagal','Kursus','Status PK','Butiran']].concat(
+    pkRows(S.li).map(r=>{const k=pkInfo(r);return[r.last.kelas,r.id,r.nama,r.last.JJKK,k.ft.kod,k.ft.kursus,k.ok?'Layak PK':'PA tiada',pkTxt(k)]}))};
 }
 
 /* ---------- perbandingan sesi ---------- */
@@ -940,9 +933,12 @@ function renderLI(){
    '<div class="tools"><div class="field"><label for="li-kelas">Kelas</label><select id="li-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum layak',f.status)+'</select></div>'+
    '<div class="field"><label for="li-q">Cari</label><input id="li-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
-   '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>';
+   '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>'+
+   '<section class="panel" style="margin-top:22px"><h3>Penilaian Khas (PK)</h3><p class="sub" style="max-width:90ch">Pelajar yang gagal tepat satu kursus dan JJKK mencapai kredit minimum LI. Pelajar layak PK jika PA kursus itu diduduki; jika tidak, ditandakan "PA tiada". Mengikut penapis kelas dan carian di atas.</p><div id="li-pk"></div></section>';
 }
 function fillLI(){
+  const pr=pkRows(S.li);
+  $('#li-pk').innerHTML='<p class="muted" style="margin:0 0 10px;font-size:13px">'+pr.filter(p=>pkInfo(p).ok).length+' layak PK, '+pr.filter(p=>!pkInfo(p).ok).length+' PA tiada.</p>'+table('pk',pkCols(),pr,{limit:200,empty:'Tiada pelajar memenuhi syarat Penilaian Khas dalam penapis ini.'});
   $('#li-body').innerHTML=table('li',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
@@ -966,9 +962,12 @@ function renderPelajar(){
    '<div class="field"><label for="p-kelas">Kelas</label><select id="p-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    '<div class="field"><label for="p-kptn">Keputusan</label><select id="p-kptn">'+opt('','Semua',f.kptn)+kp.map(k=>opt(k,k,f.kptn)).join('')+'</select></div>'+
    '<div class="field"><label for="p-q">Cari</label><input id="p-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
-   '<div class="spacer"></div><button class="btn primary" data-export="pelajar" hidden-dl>Eksport Excel</button></div><div id="p-body"></div>';
+   '<div class="spacer"></div><button class="btn primary" data-export="pelajar" hidden-dl>Eksport Excel</button></div><div id="p-gbks"></div><h3 style="margin:22px 0 10px;font-size:16px">Semua pelajar</h3><div id="p-body"></div>';
 }
 function fillPelajar(){
+  const gr=gbksRows(S.f.pelajar),ngb=gr.filter(p=>p.st==='GB').length,nks=gr.length-ngb;
+  $('#p-gbks').innerHTML='<h3 style="margin:4px 0 4px;font-size:16px">Kedudukan GB dan KS (dikira)</h3><p class="muted" style="margin:0 0 10px;max-width:90ch;font-size:13px">Dikira daripada HPNM, PNM, kegagalan kursus yang sama tiga kali dan KS tiga kali berturut-turut. '+ngb+' GB dan '+nks+' KS. Mengikut penapis kelas dan carian di atas.</p>'+
+    table('gbks',gbksCols(),gr,{limit:200,empty:'Tiada pelajar GB atau KS dalam penapis ini.'});
   $('#p-body').innerHTML=table('pelajar',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'k',label:'Kursus',get:r=>Object.keys(r.res).length,num:1},
@@ -1013,14 +1012,13 @@ const today=()=>new Date().toISOString().slice(0,10);
 function doExport(kind){
   if(kind==='gagal')return saveXlsx('pelajar-gagal-'+today()+'.xlsx',[gagalSheet(),thtlSheet(),tiruSheet()]);
   if(kind==='audit')return saveXlsx('laporan-audit-'+today()+'.xlsx',[auditSheet()]);
-  if(kind==='pelajar')return saveXlsx('semua-pelajar-'+today()+'.xlsx',[pelajarSheet()]);
+  if(kind==='pelajar')return saveXlsx('semua-pelajar-'+today()+'.xlsx',[pelajarSheet(),statusSheet()]);
   if(kind==='akj')return saveXlsx('anugerah-ketua-jabatan-'+today()+'.xlsx',[akjSheet()]);
-  if(kind==='status')return saveXlsx('kedudukan-'+today()+'.xlsx',[statusSheet()]);
   if(kind==='banding')return saveXlsx('perbandingan-sesi-'+today()+'.xlsx',[bandingSheet()]);
-  if(kind==='li')return saveXlsx('kelayakan-LI-'+today()+'.xlsx',[liSheet()]);
+  if(kind==='li')return saveXlsx('kelayakan-LI-'+today()+'.xlsx',[liSheet(),pkSheet()]);
   if(kind==='semua'){
     const f=S.f.gagal,keep=f.view;f.view='entri';
-    const all=ringkasanSheets().concat([gagalSheet(),thtlSheet(),tiruSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
+    const all=ringkasanSheets().concat([gagalSheet(),thtlSheet(),tiruSheet(),statusSheet(),akjSheet(),auditSheet(),liSheet(),pkSheet(),pelajarSheet()]).concat(S.A.sessions.length>1?[bandingSheet()]:[]);f.view=keep;
     return saveXlsx('PBU-GradeGuard-'+today()+'.xlsx',all)}
 }
 
@@ -1102,7 +1100,7 @@ function fillLembaran(){
   w.querySelector('table.lm').style.setProperty('--sc',sc+'px');
 }
 window.addEventListener('resize',()=>{clearTimeout(window._lmT);window._lmT=setTimeout(()=>{if(S.tab==='lembaran'&&$('#lm-body')&&S.A)fillLembaran()},150)});
-const TABS=[['lembaran','Lembaran'],['ringkasan','Ringkasan'],['pelajar','Semua pelajar'],['gagal','Pelajar gagal'],['status','Status'],['akj','Anugerah KJ'],['li','Kelayakan LI'],['kursus','Kursus'],['semakan','Semakan data'],['banding','Perbandingan sesi']];
+const TABS=[['lembaran','Lembaran'],['ringkasan','Ringkasan'],['pelajar','Semua pelajar'],['gagal','Pelajar gagal'],['akj','Anugerah KJ'],['li','Kelayakan LI'],['kursus','Kursus'],['semakan','Semakan data'],['banding','Perbandingan sesi']];
 function boot(){
   if(S.prog&&!S.all.some(c=>progOf(c.program)===S.prog))S.prog='';
   S.classes=S.prog?S.all.filter(c=>progOf(c.program)===S.prog):S.all.slice();
@@ -1127,7 +1125,7 @@ function render(){
     return;
   }
   const A=S.A,ralat=A.issues.filter(i=>RULES.find(r=>r.id===i.rule).sev==='ralat').length;
-  const counts={gagal:A.fails.length,semakan:A.issues.length,li:liRows().filter(r=>r.status==='layak').length,status:A.people.filter(x=>x.st!=='KB'||(pkInfo(x)&&pkInfo(x).ok)).length,banding:A.sessions.length,akj:A.studs.filter(x=>x.akj==='**').length,pelajar:A.studs.length,kursus:A.courses.size};
+  const counts={gagal:A.fails.length,semakan:A.issues.length,li:liRows().filter(r=>r.status==='layak').length,banding:A.sessions.length,akj:A.studs.filter(x=>x.akj==='**').length,pelajar:A.studs.length,kursus:A.courses.size};
   const progs=[...new Set(S.all.map(c=>progOf(c.program)))].sort();
   let h='<div id="progress" class="progress"></div>'+(progs.length>1?'<div class="chips" role="group" aria-label="Program"><span class="muted" style="font-size:12px;font-weight:600;margin-right:4px">PROGRAM</span>'+[''].concat(progs).map(pr=>{const n=S.all.filter(c=>!pr||progOf(c.program)===pr).reduce((a,c)=>a+c.students.length,0);return '<button class="btn sm'+((S.prog===pr)?' primary':'')+'" data-psel="'+esc(pr)+'" aria-pressed="'+(S.prog===pr)+'">'+(pr||'Semua')+' <span class="num" style="opacity:.75">'+n+'</span></button>'}).join('')+'</div>':'');
   h+='<div class="tabs" role="tablist">'+TABS.map(([k,l])=>'<button class="tab" role="tab" data-tab="'+k+'" aria-selected="'+(S.tab===k)+'">'+l+(counts[k]!=null?'<span class="count'+(k==='semakan'?(ralat?' bad':(A.issues.length?' warn':'')):'')+'">'+counts[k]+'</span>':'')+'</button>').join('')+'</div><div id="pane"></div>';
@@ -1137,8 +1135,8 @@ function render(){
 function renderPane(){
   const p=$('#pane');if(!p)return;
   const t=S.tab;
-  p.innerHTML=t==='ringkasan'?renderRingkasan():t==='gagal'?renderGagal():t==='lembaran'?renderLembaran():t==='kursus'?renderKursus():t==='semakan'?renderSemakan():t==='li'?renderLI():t==='status'?renderStatus():t==='banding'?renderBanding():t==='akj'?renderAkj():renderPelajar();
-  if(t==='ringkasan')fillKelas();if(t==='gagal')fillGagal();if(t==='lembaran')fillLembaran();if(t==='kursus')fillKursus();if(t==='pelajar')fillPelajar();if(t==='li')fillLI();if(t==='status')fillStatus();if(t==='banding')fillBanding();if(t==='akj')fillAkj();
+  p.innerHTML=t==='ringkasan'?renderRingkasan():t==='gagal'?renderGagal():t==='lembaran'?renderLembaran():t==='kursus'?renderKursus():t==='semakan'?renderSemakan():t==='li'?renderLI():t==='banding'?renderBanding():t==='akj'?renderAkj():renderPelajar();
+  if(t==='ringkasan')fillKelas();if(t==='gagal')fillGagal();if(t==='lembaran')fillLembaran();if(t==='kursus')fillKursus();if(t==='pelajar')fillPelajar();if(t==='li')fillLI();if(t==='banding')fillBanding();if(t==='akj')fillAkj();
   if(t==='semakan')document.querySelectorAll('details.rule[open]').forEach(d=>fillRule(d.dataset.rule));
   applyDL();
 }
@@ -1149,7 +1147,9 @@ function refreshBody(id){
   if(id==='kursus')return fillKursus();
   if(id==='pelajar')return fillPelajar();
   if(id==='li')return fillLI();
-  if(id==='status')return fillStatus();
+  if(id==='gbks')return fillPelajar();
+  if(id==='risiko')return fillKelas();
+  if(id==='pk')return fillLI();
   if(id==='banding')return fillBanding();
   if(id==='akj')return fillAkj();
 }
@@ -1182,7 +1182,6 @@ document.addEventListener('input',e=>{
   if(id==='p-q'){S.f.pelajar.q=e.target.value;fillPelajar()}
   if(id==='li-q'){S.li.q=e.target.value;fillLI()}
   if(id==='ak-q'){S.f.akj.q=e.target.value;fillAkj()}
-  if(id==='st-q'){S.f.status.q=e.target.value;fillStatus()}
   if(id==='bd-q'){S.f.banding.q=e.target.value;fillBanding()}
   if(id==='bd-thr'){S.f.banding.thr=e.target.value;fillBanding()}
 });
@@ -1199,9 +1198,6 @@ document.addEventListener('change',e=>{
   if(id==='ak-status'){S.f.akj.st=v;fillAkj()}
   if(id==='ak-kelas'){S.f.akj.kelas=v;fillAkj()}
   if(id==='ak-sesi'){S.f.akj.sesi=v;fillAkj()}
-  if(id==='st-status'){S.f.status.st=v;fillStatus()}
-  if(id==='st-kelas'){S.f.status.kelas=v;fillStatus()}
-  if(id==='st-sesi'){S.f.status.sesi=v;fillStatus()}
   if(id==='bd-trend'){S.f.banding.trend=v;fillBanding()}
   if(id==='li-kelas'){S.li.kelas=v;fillLI()}
   if(id==='li-status'){S.li.status=v;fillLI()}

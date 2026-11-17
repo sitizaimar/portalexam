@@ -880,13 +880,13 @@ function akjRows(){
 function renderAkj(){
   const A=S.A,f=S.f.akj;
   const has=A.studs.filter(x=>x.akj==='**').length,ok=A.studs.filter(x=>x.ak.ok).length;
-  return '<section class="panel" style="margin-bottom:14px"><h3>Syarat penganugerahan Anugerah Ketua Jabatan</h3>'+
-   '<p class="sub">Pelajar bertanda ** dalam lembaran keputusan. Ketiga-tiga syarat mesti dipenuhi pada semester yang dinilai.</p>'+
-   '<ol style="margin:0;padding-left:20px;display:grid;gap:6px;max-width:90ch">'+
-   '<li>Mendapat keputusan Kedudukan Baik (KB) dengan <strong>Purata Nilai Mata (PNM) bersamaan atau melebihi 3.50</strong> pada semester yang dinilai.</li>'+
-   '<li>Mencapai Nilai Mata bersamaan atau melebihi 2.00 bagi setiap kursus yang diambil pada semester yang dinilai.</li>'+
-   '<li>Memenuhi 12 kredit (pelajar sepenuh masa) dan 5 kredit bagi pelajar Kursus Secara Sambilan (KSS) atau lebih pada semester yang dinilai seperti yang telah ditetapkan dalam Buku Arahan - Arahan Peperiksaan dan Kaedah Penilaian Politeknik Kementerian Pendidikan Tinggi Malaysia.</li></ol>'+
-   '<p class="sub" style="margin:10px 0 0;max-width:90ch">Semakan portal: syarat (i) menganggap KPTN mestilah KB, KB~ atau LP (KB~ layak, selagi memenuhi syarat ii dan iii). Pelajar KSS tidak dapat dikenal pasti daripada fail, maka pelajar yang memenuhi syarat (i) dan (ii) dengan 5 hingga 11 kredit ditandakan "Semak KSS".</p></section>'+
+  return '<section class="panel" style="margin-bottom:14px"><h3>Anugerah Ketua Jabatan</h3>'+
+   '<p class="sub">Syarat-syarat penganugerahan</p>'+
+   '<ul style="margin:0;padding-left:20px;display:grid;gap:6px;max-width:90ch">'+
+   '<li>Mendapat keputusan Kedudukan Baik (KB) dengan <strong>Purata Nilai Mata (PNM) bersamaan atau melebihi 3.50</strong> pada semester yang dinilai</li>'+
+   '<li>Telah mencapai Nilai Mata bersamaan atau melebihi daripada 2.00 bagi setiap kursus yang diambil pada semester yang dinilai</li>'+
+   '<li>Telah mengambil jumlah kredit bersamaan 12 kredit (pelajar sepenuh masa) dan 5 kredit (pelajar KSS) atau lebih pada semester yang dinilai seperti yang telah ditetapkan dalam buku \u2018Arahan-Arahan Peperiksaan dan Kaedah Penilaian Politeknik Kementerian Pendidikan Malaysia\u2019</li>'+
+   '<li>Tidak pernah dikenakan tindakan tatatertib oleh Pihak Berkuasa Tatatertib Politeknik pada semester yang dinilai</li></ul></section>'+
    '<div class="kpis"><div class="kpi"><div class="k">Bertanda **</div><div class="v">'+has+'</div><div class="s">dalam lembaran keputusan</div></div>'+
    '<div class="kpi"><div class="k">Layak (dikira)</div><div class="v">'+ok+'</div><div class="s">memenuhi ketiga-tiga syarat</div></div>'+
    '<button class="kpi" data-goto="semakan"><div class="k">Tidak sepadan</div><div class="v">'+A.byRule.akj.length+'</div><div class="s">tanda ** berbeza daripada syarat</div></button></div>'+

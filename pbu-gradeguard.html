@@ -442,7 +442,7 @@ function analyze(){
             if(e!==r.jm)add('jm',s,code,'PB '+r.pb+' / PA '+r.pa+' ('+W[code]+':'+(100-W[code])+') → JM dijangka '+e+', dalam fail '+r.jm)}}
           else if(r.pa==null&&r.jm!==r.pb)add('jm',s,code,'Hanya PB ('+r.pb+') → JM dijangka '+r.pb+', dalam fail '+r.jm)}
         /* tanda gagal */
-        const tiru=!isLI&&isTiru(r),exp=isLI?'':expectedComp(r),mm=r.st.match(/^C(\d+):(PAPB|PA|PB)$/),flagged=!!r.st;
+        const tiru=!isLI&&isTiru(r),exp=isLI?'':expectedComp(r),mm=r.st.replace(/^GB:/,'C3:').match(/^C(\d+):(PAPB|PA|PB)$/),flagged=!!r.st;
         if(exp&&!flagged&&!tiru)add('tiada-tanda',s,code,'PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' → patut gagal '+exp);
         else if(flagged&&!exp&&!isLI&&!tiru)add('tanda-lebih',s,code,'Ditanda '+r.st+' tetapi PB '+(r.pb??'-')+' / PA '+(r.pa??'-')+' tidak bawah '+CFG.passComponent);
         else if(flagged&&mm&&!isLI&&!tiru&&mm[2]!==exp)add('tanda-lebih',s,code,'Ditanda '+mm[2]+' tetapi markah menunjukkan '+exp);
@@ -486,10 +486,10 @@ function analyze(){
     let streak=0;const cf={};
     arr.forEach(x=>{
       const b=baseOf(x.KPTN)||x.calc.st;streak=b==='KS'?streak+1:0;x.ksStreak=streak;
-      x.d.fails.forEach(f=>{const o=cf[f.kod]||(cf[f.kod]={n:0,att:0});o.n++;const m=String(f.tanda).match(/^C(\d+)/);if(m)o.att=Math.max(o.att,parseInt(m[1],10))})});
+      x.d.fails.forEach(f=>{const o=cf[f.kod]||(cf[f.kod]={n:0,att:0});o.n++;const m=String(f.tanda).replace(/^GB:/,'C3:').match(/^C(\d+)/);if(m)o.att=Math.max(o.att,parseInt(m[1],10));if(/^GB:/.test(f.tanda))o.gb=1})});
     const last=arr[arr.length-1];let st=last.calc.st;const why=last.calc.why.slice();
     if(last.ksStreak>=3){st='GB';why.push('KS '+last.ksStreak+' kali berturut-turut (6.1.4 iv)')}
-    for(const [kod,o] of Object.entries(cf)){const t=Math.max(o.n,o.att);if(t>=3){st='GB';why.push('Gagal '+kod+' '+t+' kali (6.1.4 iii)')}}
+    for(const [kod,o] of Object.entries(cf)){const t=Math.max(o.n,o.att);if(t>=3||o.gb){st='GB';why.push('Gagal '+kod+' '+Math.max(t,3)+' kali (6.1.4 iii)'+(o.gb?', ditanda GB dalam lembaran':''))}}
     const risk=[],h=last.HPNM,pn=last.PNM,M=CFG.margin;
     if(st!=='GB'){
       if(last.ksStreak===2)risk.push('KS kali ke-3 menjadi GB');

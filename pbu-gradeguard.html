@@ -914,9 +914,10 @@ function liRows(){
     return{s:x,kelas:x.kelas,id:x.id,nama:x.nama,prog:pr,kk,thr:isFinite(thr)?thr:null,baki:has?Math.max(0,thr-kk):null,full:hasF?fu:null,
       status:!has?'tiada':hasF&&kk>=fu?'lulus':kk<thr?'belum':'layak',gagal:x.d.fails.length}});
 }
+const pkOf=r=>{const p=S.A.people.find(x=>x.id===r.id);const k=p&&pkInfo(p);return k&&k.cukup?k:null};
 function liFiltered(){
   const f=S.li,q=f.q.toLowerCase();
-  return liRows().filter(r=>(!f.kelas||r.kelas===f.kelas)&&(!f.status||r.status===f.status)&&(!q||r.nama.toLowerCase().includes(q)||r.id.toLowerCase().includes(q)));
+  return liRows().filter(r=>(!f.kelas||r.kelas===f.kelas)&&(!f.status||(f.status==='pk'?pkOf(r)!=null:r.status===f.status))&&(!q||r.nama.toLowerCase().includes(q)||r.id.toLowerCase().includes(q)));
 }
 function renderLI(){
   const f=S.li,progs=[...new Set(S.A.studs.map(x=>progOf(x.kelas)))].sort(),all=liRows();
@@ -929,20 +930,17 @@ function renderLI(){
    '<div class="kpi"><div class="k">Belum layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit minimum LI</div></div>'+
       '<div class="kpi"><div class="k">JJKK tertinggi</div><div class="v">'+top+'</div><div class="s">antara semua pelajar dimuat naik</div></div></div>'+
    '<div class="tools"><div class="field"><label for="li-kelas">Kelas</label><select id="li-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
-   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum layak',f.status)+'</select></div>'+
+   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum layak',f.status)+opt('pk','Penilaian Khas (PK)',f.status)+'</select></div>'+
    '<div class="field"><label for="li-q">Cari</label><input id="li-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
-   '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>'+
-   '<section class="panel" style="margin-top:22px"><h3>Penilaian Khas (PK)</h3><p class="sub" style="max-width:90ch">Pelajar yang gagal tepat satu kursus dan JJKK mencapai kredit minimum LI. Pelajar layak PK jika PA kursus itu diduduki; jika tidak, ditandakan "PA tiada". Mengikut penapis kelas dan carian di atas.</p><div id="li-pk"></div></section>';
+   '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>';
 }
 function fillLI(){
-  const pr=pkRows(S.li);
-  $('#li-pk').innerHTML='<p class="muted" style="margin:0 0 10px;font-size:13px">'+pr.filter(p=>pkInfo(p).ok).length+' layak PK, '+pr.filter(p=>!pkInfo(p).ok).length+' PA tiada.</p>'+table('pk',pkCols(),pr,{limit:200,empty:'Tiada pelajar memenuhi syarat Penilaian Khas dalam penapis ini.'});
   $('#li-body').innerHTML=table('li',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
     {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum layak'):pill('info','Tiada minimum')},
     {key:'g',label:'Kursus gagal',get:r=>r.gagal,num:1}
-  ],liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
+  ].concat(S.li.status==='pk'?[{key:'pkk',label:'Kursus gagal (kod)',get:r=>pkOf(r).ft.kod,html:r=>'<span class="mono">'+esc(pkOf(r).ft.kod)+'</span> <span class="muted">'+esc(pkOf(r).ft.kursus)+'</span>'},{key:'pks',label:'Status PK',get:r=>pkOf(r).ok?'Layak':'PA tiada',html:r=>pkOf(r).ok?pill('info','Layak PK'):pill('warn','PA tiada')},{key:'pkd',label:'Butiran PK',get:r=>pkTxt(pkOf(r)),html:r=>esc(pkTxt(pkOf(r)))}]:[]),liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
 }
 function liSheet(){
   return{name:'Kelayakan LI',rows:[['Kelas','No. Pend','Nama','JJKK','Kredit LI','Baki kredit','Status','Bil. kursus gagal']].concat(
@@ -1146,7 +1144,6 @@ function refreshBody(id){
   if(id==='pelajar')return fillPelajar();
   if(id==='li')return fillLI();
   if(id==='risiko')return fillKelas();
-  if(id==='pk')return fillLI();
   if(id==='banding')return fillBanding();
   if(id==='akj')return fillAkj();
 }

@@ -249,8 +249,8 @@ const cellVal=v=>{if(isNum(v))return v;const c=clean(v);return(c===''||c==='-')?
 
 /* ============ Keadaan ============ */
 const S={all:[],prog:'',classes:[],errors:[],sample:false,tab:'lembaran',sort:{akj:{key:'pnm',dir:-1}},showAll:{},
-  li:{thr:{DIT:90,DDT:83},full:{DIT:95,DDT:92},status:'layak',kelas:'',q:''},
-  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',st:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
+  li:{thr:{DIT:90,DDT:83,DRG:82,LP:91,DLP:91},full:{DIT:95,DDT:92},status:'layak',kelas:'',q:''},
+  f:{akj:{st:'',kelas:'',sesi:'',q:''},status:{st:'',kelas:'',sesi:'',q:''},banding:{trend:'',thr:0.3,q:''},gagal:{kelas:'',kod:'',sebab:'',q:'',view:'entri'},pelajar:{kelas:'',kptn:'',q:''},lem:{kelas:'',gagal:false,q:''},audit:{sev:'',open:{}}},
   A:null};
 
 /* ============ Baca fail Excel ============ */
@@ -385,11 +385,12 @@ function expectedComp(r){
 const baseOf=k=>String(k||'').replace('~','').trim();
 function calcStanding(s){
   const why=[],h=s.HPNM,p=s.PNM;
-  if(isNum(h)&&h<1.6)why.push('HPNM '+f2(h)+' kurang 1.60 (6.1.4 i)');
-  if(isNum(p)&&p<1.0)why.push('PNM '+f2(p)+' kurang 1.00 (6.1.4 ii)');
-  if(why.length)return{st:'GB',why};
-  if(isNum(h)&&h<2.0)return{st:'KS',why:['HPNM '+f2(h)+' antara 1.60 dan 2.00']};
-  return{st:'KB',why:[]};
+  const sh=[];
+  if(isNum(h)&&h<1.6){why.push('HPNM '+f2(h)+' kurang 1.60 (6.1.4 i)');sh.push('(i) HPNM '+f2(h)+', bawah 1.60')}
+  if(isNum(p)&&p<1.0){why.push('PNM '+f2(p)+' kurang 1.00 (6.1.4 ii)');sh.push('(ii) PNM '+f2(p)+', bawah 1.00')}
+  if(why.length)return{st:'GB',why,short:sh};
+  if(isNum(h)&&h<2.0)return{st:'KS',why:['HPNM '+f2(h)+' antara 1.60 dan 2.00'],short:['HPNM '+f2(h)+', antara 1.60 dan 2.00']};
+  return{st:'KB',why:[],short:[]};
 }
 function analyze(){
   const cl=S.classes,courses=new Map(),issues=[];
@@ -449,7 +450,7 @@ function analyze(){
           const comp=mm?mm[2]:'';
           const reason=isLI?'Gagal Latihan Industri':tiru?'KT - Kes Tiru (Tatatertib)':r.jm==='TH'?'TH - Tidak Hadir':r.jm==='TL'?'TL - Kehadiran Kurang 80%':comp==='PA'?'Gagal PA':comp==='PB'?'Gagal PB':comp==='PAPB'?'KQ - PB Kurang 40%':'Gagal';
           const f={kelas:s.kelas,id:s.id,nama:s.nama,kod:code,kursus:m.name,kredit:m.credit,pb:r.pb,pa:r.pa,jm:r.jm,nm:r.nm,
-            kali:mm?'Kali '+mm[1]:'',gred:gradeInfo(r.jm)[2],gstatus:gradeInfo(r.jm)[3],comp,reason,tanda:r.st,pnm:s.PNM,kptn:s.KPTN};
+            kali:mm?'C'+mm[1]:'',gred:gradeInfo(r.jm)[2],gstatus:gradeInfo(r.jm)[3],comp,reason,tanda:r.st,pnm:s.PNM,kptn:s.KPTN};
           d.fails.push(f);fails.push(f);m.fail++}
         else d.credOk+=m.credit;
       }
@@ -485,16 +486,17 @@ function analyze(){
     arr.forEach(x=>{
       const b=baseOf(x.KPTN)||x.calc.st;streak=b==='KS'?streak+1:0;x.ksStreak=streak;
       x.d.fails.forEach(f=>{const o=cf[f.kod]||(cf[f.kod]={n:0,att:0});o.n++;const m=String(f.tanda).replace(/^GB:/,'C3:').match(/^C(\d+)/);if(m)o.att=Math.max(o.att,parseInt(m[1],10));if(/^GB:/.test(f.tanda))o.gb=1})});
-    const last=arr[arr.length-1];let st=last.calc.st;const why=last.calc.why.slice();
-    if(last.ksStreak>=3){st='GB';why.push('KS '+last.ksStreak+' kali berturut-turut (6.1.4 iv)')}
-    for(const [kod,o] of Object.entries(cf)){const t=Math.max(o.n,o.att);if(t>=3||o.gb){st='GB';why.push('Gagal '+kod+' '+Math.max(t,3)+' kali (6.1.4 iii)'+(o.gb?', ditanda GB dalam lembaran':''))}}
+    const last=arr[arr.length-1];let st=last.calc.st;const why=last.calc.why.slice(),punca=(last.calc.short||[]).slice();
+    if(last.ksStreak>=3){st='GB';why.push('KS '+last.ksStreak+' kali berturut-turut (6.1.4 iv)');punca.push('(iv) KS '+last.ksStreak+' kali berturut-turut')}
+    for(const [kod,o] of Object.entries(cf)){const t=Math.max(o.n,o.att);if(t>=3||o.gb){st='GB';why.push('Gagal '+kod+' '+Math.max(t,3)+' kali (6.1.4 iii)'+(o.gb?', ditanda GB dalam lembaran':''));punca.push('(iii) Gagal '+kod+' kali ke-3')}}
     const risk=[],h=last.HPNM,pn=last.PNM,M=CFG.margin;
     if(st!=='GB'){
       if(last.ksStreak===2)risk.push('KS kali ke-3 menjadi GB');
       if(st==='KS'&&isNum(h)&&h<1.6+M)risk.push('HPNM hampir 1.60');
       if(st==='KB'&&isNum(h)&&h<2+M)risk.push('HPNM hampir 2.00');
-      if(isNum(pn)&&pn>=1&&pn<1+M)risk.push('PNM hampir 1.00')}
-    people.push({id,nama:last.nama,arr,last,st,why,risk,ksStreak:last.ksStreak,failTot:arr.reduce((a,x)=>a+x.d.fails.length,0)});
+      if(isNum(pn)&&pn>=1&&pn<1+M)risk.push('PNM hampir 1.00');
+      last.d.fails.forEach(f=>{const o=cf[f.kod];if(o&&Math.max(o.n,o.att)===2){const t='C2 '+f.kod+': GB jika gagal lagi';if(!risk.includes(t))risk.push(t)}})}
+    people.push({id,nama:last.nama,arr,last,st,why,punca,risk,ksStreak:last.ksStreak,failTot:arr.reduce((a,x)=>a+x.d.fails.length,0)});
   }
   const sessions=[...new Map(cl.map(c=>[c.session.label,c.session])).values()].sort((a,b)=>a.ord-b.ord);
   const byRule={};RULES.forEach(r=>byRule[r.id]=[]);issues.forEach(i=>byRule[i.rule].push(i));
@@ -594,7 +596,7 @@ function renderRingkasan(){
    '<div class="kpi"><div class="k">Purata PNM</div><div class="v">'+f2(avg)+'</div><div class="s">'+A.studs.filter(s=>s.akj==='**').length+' pelajar bertanda **</div></div>'+
    '<button class="kpi" data-goto="semakan"><div class="k">Ralat data</div><div class="v">'+ralat+'</div><div class="s">'+(A.issues.length-ralat)+' perkara untuk disemak</div></button></div>';
   if(A.studs.some(x=>/^(GB|KS)/.test(x.KPTN||'')))h+='<section class="panel" style="margin-bottom:18px"><h3>Kedudukan perlu tindakan</h3><p class="sub">Pelajar Gagal dan Diberhentikan (GB) dan Kedudukan Bersyarat (KS).</p><div id="tbl-tindakan"></div></section>';
-  if(risikoRows().length)h+='<section class="panel" style="margin-bottom:18px"><h3>Hampir ambang</h3><p class="sub">Pelajar dalam lingkungan '+CFG.margin.toFixed(2)+' daripada ambang kedudukan: HPNM hampir 1.60 atau 2.00, PNM hampir 1.00, atau KS kali ke-3 yang akan menjadi GB.</p><div id="tbl-risiko"></div></section>';
+  if(risikoRows().length)h+='<section class="panel" style="margin-bottom:18px"><h3>Hampir ambang</h3><p class="sub">Pelajar dalam lingkungan '+CFG.margin.toFixed(2)+' daripada ambang kedudukan (HPNM hampir 1.60 atau 2.00, PNM hampir 1.00), KS kali ke-3 yang akan menjadi GB, dan pelajar yang gagal kursus kali kedua (C2) kerana akan menjadi GB jika gagal kali ketiga. Kod kursus C2 dinyatakan.</p><div id="tbl-risiko"></div></section>';
   h+='<div class="grid2"><section class="panel"><h3>Taburan gred</h3><p class="sub">Bilangan keputusan kursus bagi setiap gred, semua kelas digabung. Halakan tetikus untuk markah, NM dan status.</p>'+gradeChart()+'</section>'+
      '<section class="panel"><h3>Pelajar dengan kursus gagal setiap kelas</h3><p class="sub">Peratus pelajar yang gagal sekurang-kurangnya satu kursus.</p>'+classChart(cs)+'</section></div>';
   h+='<h3 style="margin:4px 0 10px">Ringkasan mengikut kelas</h3><div id="tbl-kelas"></div>';
@@ -881,7 +883,7 @@ function renderAkj(){
    '<div class="kpis"><div class="kpi"><div class="k">Bertanda **</div><div class="v">'+has+'</div><div class="s">dalam lembaran keputusan</div></div>'+
    '<div class="kpi"><div class="k">Layak (dikira)</div><div class="v">'+ok+'</div><div class="s">memenuhi ketiga-tiga syarat</div></div>'+
    '<button class="kpi" data-goto="semakan"><div class="k">Tidak sepadan</div><div class="v">'+A.byRule.akj.length+'</div><div class="s">tanda ** berbeza daripada syarat</div></button></div>'+
-   '<div class="tools"><div class="field"><label for="ak-status">Papar</label><select id="ak-status">'+opt('','Bertanda ** atau layak (12 kredit ke atas)',f.st)+opt('ada','Bertanda ** sahaja',f.st)+opt('beza','Tidak sepadan',f.st)+opt('kss','Semak KSS',f.st)+'</select></div>'+
+   '<div class="tools"><div class="field"><label for="ak-status">Papar</label><select id="ak-status">'+opt('','Bertanda ** atau layak (12 kredit ke atas)',f.st)+opt('ada','Bertanda ** sahaja',f.st)+opt('beza','Tidak sepadan',f.st)+'</select></div>'+
    '<div class="field"><label for="ak-kelas">Kelas</label><select id="ak-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    (A.sessions.length>1?'<div class="field"><label for="ak-sesi">Sesi</label><select id="ak-sesi">'+opt('','Semua sesi',f.sesi)+A.sessions.map(x=>opt(x.label,x.label,f.sesi)).join('')+'</select></div>':'')+
    '<div class="field"><label for="ak-q">Cari</label><input id="ak-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
@@ -905,7 +907,7 @@ function akjSheet(){
 }
 
 /* ---------- kelayakan latihan industri ---------- */
-const progOf=k=>{const m=String(k).match(/^[A-Za-z]{3}/);return m?m[0].toUpperCase():''};
+const progOf=k=>{const m=String(k).match(/^[A-Za-z]+(?=\d)/)||String(k).match(/^[A-Za-z]{3}/);return m?m[0].toUpperCase():''};
 function liRows(){
   const f=S.li;
   return S.A.studs.map(x=>{
@@ -927,10 +929,10 @@ function renderLI(){
    '<div class="tools">'+progs.map(pr=>'<div class="field"><label for="li-thr-'+esc(pr)+'">Layak LI: JJKK minimum ('+esc(pr)+')</label><input id="li-thr-'+esc(pr)+'" data-prog="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.thr[pr]==null?'':f.thr[pr])+'"></div><div class="field"><label for="li-full-'+esc(pr)+'">Lulus Penuh: JJKK ke atas ('+esc(pr)+')</label><input id="li-full-'+esc(pr)+'" data-full="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.full[pr]==null?'':f.full[pr])+'"></div>').join('')+'</div>'+
    '<div class="kpis"><div class="kpi"><div class="k">Layak</div><div class="v">'+lay+'</div><div class="s">JJKK mencapai kredit minimum LI, belum Lulus Penuh</div></div>'+
    '<div class="kpi"><div class="k">Lulus Penuh</div><div class="v">'+lul+'</div><div class="s">JJKK mencapai had Lulus Penuh</div></div>'+
-   '<div class="kpi"><div class="k">Belum layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit minimum LI</div></div>'+
+   '<div class="kpi"><div class="k">Belum Layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit minimum LI</div></div>'+
       '<div class="kpi"><div class="k">JJKK tertinggi</div><div class="v">'+top+'</div><div class="s">antara semua pelajar dimuat naik</div></div></div>'+
    '<div class="tools"><div class="field"><label for="li-kelas">Kelas</label><select id="li-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
-   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum layak',f.status)+opt('pk','Penilaian Khas (PK)',f.status)+'</select></div>'+
+   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum Layak',f.status)+opt('pk','Penilaian Khas (PK)',f.status)+'</select></div>'+
    '<div class="field"><label for="li-q">Cari</label><input id="li-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
    '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>';
 }
@@ -938,31 +940,30 @@ function fillLI(){
   $('#li-body').innerHTML=table('li',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
-    {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum layak'):pill('info','Tiada minimum')},
+    {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum Layak'):pill('info','Tiada minimum')},
     {key:'g',label:'Kursus gagal',get:r=>r.gagal,num:1}
   ].concat(S.li.status==='pk'?[{key:'pkk',label:'Kursus gagal (kod)',get:r=>pkOf(r).ft.kod,html:r=>'<span class="mono">'+esc(pkOf(r).ft.kod)+'</span> <span class="muted">'+esc(pkOf(r).ft.kursus)+'</span>'},{key:'pks',label:'Status PK',get:r=>pkOf(r).ok?'Layak':'PA tiada',html:r=>pkOf(r).ok?pill('info','Layak PK'):pill('warn','PA tiada')},{key:'pkd',label:'Butiran PK',get:r=>pkTxt(pkOf(r)),html:r=>esc(pkTxt(pkOf(r)))}]:[]),liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
 }
 function liSheet(){
   return{name:'Kelayakan LI',rows:[['Kelas','No. Pend','Nama','JJKK','Kredit LI','Baki kredit','Status','Bil. kursus gagal']].concat(
-    liFiltered().map(r=>[r.kelas,r.id,r.nama,r.kk,r.thr,r.baki,({layak:'Layak LI',lulus:'Lulus Penuh',antara:'Antara',belum:'Belum layak'})[r.status]||'Tiada minimum',r.gagal]))};
+    liFiltered().map(r=>[r.kelas,r.id,r.nama,r.kk,r.thr,r.baki,({layak:'Layak LI',lulus:'Lulus Penuh',antara:'Antara',belum:'Belum Layak'})[r.status]||'Tiada minimum',r.gagal]))};
 }
 
 /* ---------- semua pelajar ---------- */
 function pelajarRows(){
   const f=S.f.pelajar,q=f.q.toLowerCase();
-  const pst=f.st?new Map(S.A.people.map(p=>[p.id,p])):null;
-  return S.A.studs.filter(s=>(!f.kelas||s.kelas===f.kelas)&&(!f.kptn||s.KPTN===f.kptn)&&(!f.st||(pst.get(s.id)&&pst.get(s.id).last===s&&pst.get(s.id).st===f.st))&&(!q||s.nama.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)));
+  const calc=f.kptn==='GB'||f.kptn==='KS',pst=calc?new Map(S.A.people.map(p=>[p.id,p])):null;
+  return S.A.studs.filter(s=>(!f.kelas||s.kelas===f.kelas)&&(!f.kptn||(calc?(pst.get(s.id)&&pst.get(s.id).last===s&&pst.get(s.id).st===f.kptn):s.KPTN===f.kptn))&&(!q||s.nama.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)));
 }
 function renderPelajar(){
-  const f=S.f.pelajar,kp=[...new Set(S.A.studs.map(s=>s.KPTN).filter(Boolean))].sort();
+  const f=S.f.pelajar,kp=[...new Set(S.A.studs.map(s=>s.KPTN).filter(k=>k&&!/^(GB|KS)/.test(k)))].sort().concat(['GB','KS']);
   return '<div class="tools">'+
    '<div class="field"><label for="p-kelas">Kelas</label><select id="p-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
    '<div class="field"><label for="p-kptn">Keputusan</label><select id="p-kptn">'+opt('','Semua',f.kptn)+kp.map(k=>opt(k,k,f.kptn)).join('')+'</select></div>'+
-   '<div class="field"><label for="p-st">Kedudukan (dikira)</label><select id="p-st">'+opt('','Semua',f.st)+opt('GB','GB',f.st)+opt('KS','KS',f.st)+'</select></div>'+
    '<div class="field"><label for="p-q">Cari</label><input id="p-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
    '<div class="spacer"></div><button class="btn primary" data-export="pelajar" hidden-dl>Eksport Excel</button></div><div id="p-body"></div>';
 }
-const personOf=r=>S.A.people.find(p=>p.id===r.id)||{st:'',why:[]};
+const personOf=r=>S.A.people.find(p=>p.id===r.id)||{st:'',why:[],punca:[]};
 function fillPelajar(){
   $('#p-body').innerHTML=table('pelajar',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
@@ -971,7 +972,7 @@ function fillPelajar(){
     {key:'pnm',label:'PNM',get:r=>r.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.HPNM,num:1,fmt:f2},
     {key:'kptn',label:'KPTN',get:r=>r.KPTN,html:r=>kptnPill(r.KPTN)},
     {key:'akj',label:'**',get:r=>r.akj,html:r=>r.akj==='**'?pill('info','**'):''}
-  ].concat(S.f.pelajar.st?[{key:'dk',label:'Dikira',get:r=>personOf(r).st,html:r=>stPill(personOf(r).st)},{key:'sb',label:'Sebab',get:r=>personOf(r).why.join('; '),html:r=>esc(personOf(r).why.join('; '))}]:[]),pelajarRows(),{limit:400});
+  ].concat(S.f.pelajar.kptn==='GB'||S.f.pelajar.kptn==='KS'?[{key:'pc',label:'Punca '+S.f.pelajar.kptn,get:r=>personOf(r).punca.join('; '),html:r=>personOf(r).punca.map(x=>'<div>'+esc(x)+'</div>').join('')}]:[]),pelajarRows(),{limit:400});
 }
 function pelajarSheet(){
   return{name:'Semua Pelajar',rows:[['Kelas','No. Pend','Nama','Bil. kursus','Bil. gagal','JJKS','JJKL','PNM','HPNM','KPTN','**']].concat(
@@ -1197,7 +1198,6 @@ document.addEventListener('change',e=>{
   if(id==='li-status'){S.li.status=v;fillLI()}
   if(id==='p-kelas'){S.f.pelajar.kelas=v;fillPelajar()}
   if(id==='p-kptn'){S.f.pelajar.kptn=v;fillPelajar()}
-  if(id==='p-st'){S.f.pelajar.st=v;fillPelajar()}
 });
 ['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();const dz=$('#dz');if(dz)dz.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{const dz=$('#dz');if(dz)dz.classList.remove('over')}));

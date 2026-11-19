@@ -781,7 +781,7 @@ function pkInfo(p){
   const x=p.last,f=x.d.fails;if(f.length!==1)return null;
   const pr=progOf(x.kelas),thr=parseFloat(S.li.thr[pr]);if(!isFinite(thr)||!isNum(x.JJKK))return null;
   const ft=f[0],total=x.JJKK;
-  const sat=isNum(ft.pa)&&ft.pa>0&&ft.jm!=='TH'&&ft.jm!=='TL'&&ft.jm!=='LI';
+  const sat=isNum(ft.pa)&&ft.pa>0&&!isTiru(ft)&&ft.jm!=='TH'&&ft.jm!=='TL'&&ft.jm!=='LI';
   return{ft,thr,jjkk:x.JJKK,total,sat,cukup:total>=thr,ok:total>=thr&&sat};
 }
 const pkList=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.ok);
@@ -789,7 +789,7 @@ const pkNear=()=>S.A.people.map(p=>({p,k:pkInfo(p)})).filter(r=>r.k&&r.k.cukup&&
 const pkTxt=k=>k.ft.kod+' ('+k.ft.kredit+' kredit): JJKK '+k.jjkk+' (minimum '+k.thr+'), PA '+(k.sat?'diduduki ('+k.ft.pa+')':k.ft.jm==='LI'?'tiada (Latihan Industri)':'tidak diduduki');
 function personOk(p,f){const q=(f.q||'').toLowerCase();return(!f.kelas||p.last.kelas===f.kelas)&&(!q||p.nama.toLowerCase().includes(q)||p.id.toLowerCase().includes(q))}
 const risikoRows=()=>S.A.people.filter(p=>p.risk.length&&p.st!=='GB');
-const pkRows=f=>S.A.people.filter(p=>{const k=pkInfo(p);return k&&k.cukup&&personOk(p,f)});
+const pkRows=f=>S.A.people.filter(p=>{const k=pkInfo(p);return k&&k.ok&&personOk(p,f)});
 const pBase=()=>[
   {key:'kelas',label:'Kelas',get:r=>r.last.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
   {key:'pnm',label:'PNM',get:r=>r.last.PNM,num:1,fmt:f2},{key:'hp',label:'HPNM',get:r=>r.last.HPNM,num:1,fmt:f2},
@@ -806,8 +806,8 @@ function statusSheet(){
     S.A.people.map(r=>{const k=pkInfo(r);return[r.last.kelas,r.last.sesi,r.id,r.nama,r.last.PNM,r.last.HPNM,r.last.KPTN,r.st,r.why.join('; '),r.risk.join('; '),k&&k.ok?'Ya':k&&k.cukup?'Tidak (PA tiada)':'',k&&k.cukup?pkTxt(k):'']}))};
 }
 function pkSheet(){
-  return{name:'Penilaian Khas',rows:[['Kelas','No. Pend','Nama','JJKK','Kod kursus gagal','Kursus','Status PK','Butiran']].concat(
-    pkRows(S.li).map(r=>{const k=pkInfo(r);return[r.last.kelas,r.id,r.nama,r.last.JJKK,k.ft.kod,k.ft.kursus,k.ok?'Layak PK':'PA tiada',pkTxt(k)]}))};
+  return{name:'Penilaian Khas',rows:[['Kelas','No. Pend','Nama','JJKK','Kod kursus gagal','Kursus','Butiran']].concat(
+    pkRows(S.li).map(r=>{const k=pkInfo(r);return[r.last.kelas,r.id,r.nama,r.last.JJKK,k.ft.kod,k.ft.kursus,pkTxt(k)]}))};
 }
 
 /* ---------- perbandingan sesi ---------- */
@@ -916,7 +916,7 @@ function liRows(){
     return{s:x,kelas:x.kelas,id:x.id,nama:x.nama,prog:pr,kk,thr:isFinite(thr)?thr:null,baki:has?Math.max(0,thr-kk):null,full:hasF?fu:null,
       status:!has?'tiada':hasF&&kk>=fu?'lulus':kk<thr?'belum':'layak',gagal:x.d.fails.length}});
 }
-const pkOf=r=>{const p=S.A.people.find(x=>x.id===r.id);const k=p&&pkInfo(p);return k&&k.cukup?k:null};
+const pkOf=r=>{const p=S.A.people.find(x=>x.id===r.id);const k=p&&pkInfo(p);return k&&k.ok?k:null};
 function liFiltered(){
   const f=S.li,q=f.q.toLowerCase();
   return liRows().filter(r=>(!f.kelas||r.kelas===f.kelas)&&(!f.status||(f.status==='pk'?pkOf(r)!=null:r.status===f.status))&&(!q||r.nama.toLowerCase().includes(q)||r.id.toLowerCase().includes(q)));
@@ -942,7 +942,7 @@ function fillLI(){
     {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
     {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum Layak'):pill('info','Tiada minimum')},
     {key:'g',label:'Kursus gagal',get:r=>r.gagal,num:1}
-  ].concat(S.li.status==='pk'?[{key:'pkk',label:'Kursus gagal (kod)',get:r=>pkOf(r).ft.kod,html:r=>'<span class="mono">'+esc(pkOf(r).ft.kod)+'</span> <span class="muted">'+esc(pkOf(r).ft.kursus)+'</span>'},{key:'pks',label:'Status PK',get:r=>pkOf(r).ok?'Layak':'PA tiada',html:r=>pkOf(r).ok?pill('info','Layak PK'):pill('warn','PA tiada')},{key:'pkd',label:'Butiran PK',get:r=>pkTxt(pkOf(r)),html:r=>esc(pkTxt(pkOf(r)))}]:[]),liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
+  ].filter(c=>!(S.li.status==='pk'&&c.key==='st')).concat(S.li.status==='pk'?[{key:'pkk',label:'Kursus gagal (kod)',get:r=>pkOf(r).ft.kod,html:r=>'<span class="mono">'+esc(pkOf(r).ft.kod)+'</span> <span class="muted">'+esc(pkOf(r).ft.kursus)+'</span>'},{key:'pkd',label:'Butiran PK',get:r=>pkTxt(pkOf(r)),html:r=>esc(pkTxt(pkOf(r)))}]:[]),liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
 }
 function liSheet(){
   return{name:'Kelayakan LI',rows:[['Kelas','No. Pend','Nama','JJKK','Kredit LI','Baki kredit','Status','Bil. kursus gagal']].concat(

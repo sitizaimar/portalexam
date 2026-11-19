@@ -908,18 +908,26 @@ function akjSheet(){
 
 /* ---------- kelayakan latihan industri ---------- */
 const progOf=k=>{const m=String(k).match(/^[A-Za-z]+(?=\d)/)||String(k).match(/^[A-Za-z]{3}/);return m?m[0].toUpperCase():''};
+/* Pelajar cukup JJKK tetapi gagal 1 kursus C1 (Penilaian Khas) atau kes tiru dikeluarkan daripada Layak LI */
+function liStatus(x,P,st){
+  if(st!=='layak')return st;
+  if(x.d.fails.some(f=>/^KT/.test(f.reason)))return 'tiru';
+  const p=P.get(x.id),k=p&&p.last===x&&pkInfo(p);
+  if(k&&k.ok&&(!k.ft.kali||k.ft.kali==='C1'))return 'pk';
+  return st;
+}
 function liRows(){
-  const f=S.li;
+  const f=S.li,P=new Map(S.A.people.map(p=>[p.id,p]));
   return S.A.studs.map(x=>{
     const pr=progOf(x.kelas),thr=parseFloat(f.thr[pr]),kk=x.JJKK,fu=parseFloat(f.full[pr]);
     const has=isFinite(thr)&&isNum(kk),hasF=isFinite(fu);
     return{s:x,kelas:x.kelas,id:x.id,nama:x.nama,prog:pr,kk,thr:isFinite(thr)?thr:null,baki:has?Math.max(0,thr-kk):null,full:hasF?fu:null,
-      status:!has?'tiada':hasF&&kk>=fu?'lulus':kk<thr?'belum':'layak',gagal:x.d.fails.length}});
+      status:liStatus(x,P,!has?'tiada':hasF&&kk>=fu?'lulus':kk<thr?'belum':'layak'),gagal:x.d.fails.length}});
 }
 const pkOf=r=>{const p=S.A.people.find(x=>x.id===r.id);const k=p&&pkInfo(p);return k&&k.ok?k:null};
 function liFiltered(){
   const f=S.li,q=f.q.toLowerCase();
-  return liRows().filter(r=>(!f.kelas||r.kelas===f.kelas)&&(!f.status||(f.status==='pk'?pkOf(r)!=null:r.status===f.status))&&(!q||r.nama.toLowerCase().includes(q)||r.id.toLowerCase().includes(q)));
+  return liRows().filter(r=>(!f.kelas||r.kelas===f.kelas)&&(!f.status||r.status===f.status)&&(!q||r.nama.toLowerCase().includes(q)||r.id.toLowerCase().includes(q)));
 }
 function renderLI(){
   const f=S.li,progs=[...new Set(S.A.studs.map(x=>progOf(x.kelas)))].sort(),all=liRows();
@@ -927,12 +935,12 @@ function renderLI(){
   const top=Math.max(0,...all.map(r=>isNum(r.kk)?r.kk:0));
   return ''+
    '<div class="tools">'+progs.map(pr=>'<div class="field"><label for="li-thr-'+esc(pr)+'">Layak LI: JJKK minimum ('+esc(pr)+')</label><input id="li-thr-'+esc(pr)+'" data-prog="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.thr[pr]==null?'':f.thr[pr])+'"></div><div class="field"><label for="li-full-'+esc(pr)+'">Lulus Penuh: JJKK ke atas ('+esc(pr)+')</label><input id="li-full-'+esc(pr)+'" data-full="'+esc(pr)+'" type="number" min="0" step="1" style="min-width:100px" value="'+esc(f.full[pr]==null?'':f.full[pr])+'"></div>').join('')+'</div>'+
-   '<div class="kpis"><div class="kpi"><div class="k">Layak</div><div class="v">'+lay+'</div><div class="s">JJKK mencapai kredit minimum LI, belum Lulus Penuh</div></div>'+
+   '<div class="kpis"><div class="kpi"><div class="k">Layak</div><div class="v">'+lay+'</div><div class="s">JJKK mencapai kredit minimum LI; tidak termasuk Penilaian Khas dan kes tiru</div></div>'+
    '<div class="kpi"><div class="k">Lulus Penuh</div><div class="v">'+lul+'</div><div class="s">JJKK mencapai had Lulus Penuh</div></div>'+
    '<div class="kpi"><div class="k">Belum Layak</div><div class="v">'+bel+'</div><div class="s">JJKK di bawah kredit minimum LI</div></div>'+
       '<div class="kpi"><div class="k">JJKK tertinggi</div><div class="v">'+top+'</div><div class="s">antara semua pelajar dimuat naik</div></div></div>'+
    '<div class="tools"><div class="field"><label for="li-kelas">Kelas</label><select id="li-kelas">'+opt('','Semua kelas',f.kelas)+S.classes.map(c=>opt(c.label,c.label,f.kelas)).join('')+'</select></div>'+
-   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum Layak',f.status)+opt('pk','Penilaian Khas (PK)',f.status)+'</select></div>'+
+   '<div class="field"><label for="li-status">Status</label><select id="li-status">'+opt('','Semua',f.status)+opt('layak','Layak LI',f.status)+opt('lulus','Lulus Penuh',f.status)+opt('belum','Belum Layak',f.status)+opt('pk','Penilaian Khas (PK)',f.status)+opt('tiru','Kes Tiru',f.status)+'</select></div>'+
    '<div class="field"><label for="li-q">Cari</label><input id="li-q" type="search" placeholder="Nama atau No. Pend" value="'+esc(f.q)+'"></div>'+
    '<div class="spacer"></div><button class="btn primary" data-export="li">Eksport Excel</button></div><div id="li-body"></div>';
 }
@@ -940,13 +948,13 @@ function fillLI(){
   $('#li-body').innerHTML=table('li',[
     {key:'kelas',label:'Kelas',get:r=>r.kelas},{key:'id',label:'No. Pend',get:r=>r.id,mono:1},{key:'nama',label:'Nama',get:r=>r.nama},
     {key:'kk',label:'JJKK',get:r=>r.kk,num:1},{key:'thr',label:'Minimum LI',get:r=>r.thr,num:1},{key:'baki',label:'Baki kredit',get:r=>r.baki,num:1},
-    {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum Layak'):pill('info','Tiada minimum')},
+    {key:'st',label:'Status',get:r=>r.status,html:r=>r.status==='layak'?pill('ok','Layak LI'):r.status==='pk'?pill('info','Penilaian Khas'):r.status==='tiru'?pill('bad','Kes Tiru'):r.status==='lulus'?pill('ok','Lulus Penuh'):r.status==='antara'?pill('info','Antara'):r.status==='belum'?pill('warn','Belum Layak'):pill('info','Tiada minimum')},
     {key:'g',label:'Kursus gagal',get:r=>r.gagal,num:1}
   ].filter(c=>!(S.li.status==='pk'&&c.key==='st')).concat(S.li.status==='pk'?[{key:'pkk',label:'Kursus gagal (kod)',get:r=>pkOf(r).ft.kod,html:r=>'<span class="mono">'+esc(pkOf(r).ft.kod)+'</span> <span class="muted">'+esc(pkOf(r).ft.kursus)+'</span>'},{key:'pkd',label:'Butiran PK',get:r=>pkTxt(pkOf(r)),html:r=>esc(pkTxt(pkOf(r)))}]:[]),liFiltered(),{limit:400,empty:'Tiada pelajar sepadan. Cuba ubah kredit minimum atau penapis.'});
 }
 function liSheet(){
   return{name:'Kelayakan LI',rows:[['Kelas','No. Pend','Nama','JJKK','Kredit LI','Baki kredit','Status','Bil. kursus gagal']].concat(
-    liFiltered().map(r=>[r.kelas,r.id,r.nama,r.kk,r.thr,r.baki,({layak:'Layak LI',lulus:'Lulus Penuh',antara:'Antara',belum:'Belum Layak'})[r.status]||'Tiada minimum',r.gagal]))};
+    liFiltered().map(r=>[r.kelas,r.id,r.nama,r.kk,r.thr,r.baki,({layak:'Layak LI',lulus:'Lulus Penuh',antara:'Antara',belum:'Belum Layak',pk:'Penilaian Khas',tiru:'Kes Tiru'})[r.status]||'Tiada minimum',r.gagal]))};
 }
 
 /* ---------- semua pelajar ---------- */
